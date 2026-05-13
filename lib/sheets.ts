@@ -1,15 +1,39 @@
-import { google } from "googleapis";
+function parseCSV(text: string): string[][] {
+  const rows: string[][] = [];
+  let current = "";
+  let inQuotes = false;
+  let cells: string[] = [];
 
-function getAuth() {
-  const json = Buffer.from(
-    process.env.GOOGLE_SERVICE_ACCOUNT_JSON!,
-    "base64"
-  ).toString("utf-8");
-  const credentials = JSON.parse(json);
-  return new google.auth.GoogleAuth({
-    credentials,
-    scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-  });
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const next = text[i + 1];
+
+    if (ch === '"') {
+      if (inQuotes && next === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === "," && !inQuotes) {
+      cells.push(current.trim());
+      current = "";
+    } else if ((ch === "\n" || (ch === "\r" && next === "\n")) && !inQuotes) {
+      if (ch === "\r") i++;
+      cells.push(current.trim());
+      rows.push(cells);
+      cells = [];
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  if (current || cells.length) {
+    cells.push(current.trim());
+    rows.push(cells);
+  }
+
+  return rows.filter((r) => r.some((c) => c !== ""));
 }
 
 function parseDate(val: string): Date | null {
@@ -33,18 +57,17 @@ export async function getSheetRows(
   fromDate: string,
   toDate: string
 ): Promise<Record<string, string>[]> {
-  const auth = getAuth();
-  const sheets = google.sheets({ version: "v4", auth });
+  const sheetId = process.env.GOOGLE_SHEET_ID!;
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
 
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-    range: tabName,
-  });
+  const res = await fetch(url, { next: { revalidate: 0 } });
+  if (!res.ok) throw new Error(`Failed to fetch sheet "${tabName}": ${res.status}`);
 
-  const rows = response.data.values || [];
+  const text = await res.text();
+  const rows = parseCSV(text);
   if (rows.length === 0) return [];
 
-  const headers = rows[0] as string[];
+  const headers = rows[0];
   const dataRows = rows.slice(1);
 
   const from = new Date(fromDate);
@@ -55,7 +78,7 @@ export async function getSheetRows(
     .map((row) => {
       const obj: Record<string, string> = {};
       headers.forEach((h, i) => {
-        obj[h] = (row[i] as string) || "";
+        obj[h] = row[i] || "";
       });
       return obj;
     })
