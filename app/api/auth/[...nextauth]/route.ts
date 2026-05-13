@@ -1,23 +1,30 @@
 import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 const handler = NextAuth({
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (
+          credentials?.username === process.env.DASHBOARD_USERNAME &&
+          credentials?.password === process.env.DASHBOARD_PASSWORD
+        ) {
+          return { id: "1", name: credentials.username };
+        }
+        return null;
+      },
     }),
   ],
-  callbacks: {
-    async signIn({ user }) {
-      const allowed = (process.env.ALLOWED_EMAILS || "").split(",").map((e) => e.trim());
-      return allowed.includes(user.email || "");
-    },
-  },
   pages: {
     signIn: "/login",
     error: "/login",
   },
+  session: { strategy: "jwt" },
 });
 
 export { handler as GET, handler as POST };
