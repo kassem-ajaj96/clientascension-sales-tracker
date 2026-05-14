@@ -25,9 +25,10 @@ export function SDRTab({ data, loading }: { data: SDRData | null; loading: boole
   return (
     <div className="p-6 space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <KPICard label="Total Dials" value={t ? String(t.dials) : "—"} color="blue" />
         <KPICard label="Total Connects" value={t ? String(t.connects) : "—"} color="purple" />
+        <KPICard label="Total Conversations" value={t ? String(t.convo) : "—"} color="gold" />
         <KPICard label="Total Booked" value={t ? String(t.meetingsBooked) : "—"} color="green" />
       </div>
 
