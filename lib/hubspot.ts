@@ -86,7 +86,7 @@ async function getDealIds(contactIds: string[]): Promise<string[]> {
       }
     }
   }
-  return [...dealIds];
+  return Array.from(dealIds);
 }
 
 interface DealProps {

@@ -1,11 +1,11 @@
 import { KPICard } from "./KPICard";
 import { PctBadge } from "./PctBadge";
 
-interface AERep {
+interface SDRAERep {
   name: string;
   scheduled: number;
-  liveCalls: number;
-  offers: number;
+  showed: number;
+  offered: number;
   closes: number;
   cashCollected: number;
   showRate: number | null;
@@ -14,9 +14,9 @@ interface AERep {
   cashPerCall: number | null;
 }
 
-interface AEData {
-  reps: AERep[];
-  totals: Omit<AERep, "name">;
+interface SDRAEData {
+  reps: SDRAERep[];
+  totals: Omit<SDRAERep, "name">;
 }
 
 function fmt$(n: number) {
@@ -33,7 +33,7 @@ function fmtPct(v: number | null) {
   return `${(v * 100).toFixed(1)}%`;
 }
 
-export function AETab({ data, loading }: { data: AEData | null; loading: boolean }) {
+export function SDRAETab({ data, loading }: { data: SDRAEData | null; loading: boolean }) {
   const t = data?.totals;
 
   return (
@@ -56,8 +56,8 @@ export function AETab({ data, loading }: { data: AEData | null; loading: boolean
               <tr className="border-b border-[#222] text-gray-400 text-xs uppercase tracking-wide">
                 <th className="text-left px-4 py-3 font-medium">Rep</th>
                 <th className="text-right px-4 py-3 font-medium">Scheduled</th>
-                <th className="text-right px-4 py-3 font-medium">Live Calls</th>
-                <th className="text-right px-4 py-3 font-medium">Offers</th>
+                <th className="text-right px-4 py-3 font-medium">Showed</th>
+                <th className="text-right px-4 py-3 font-medium">Offered</th>
                 <th className="text-right px-4 py-3 font-medium">Closes</th>
                 <th className="text-center px-4 py-3 font-medium">Show%</th>
                 <th className="text-center px-4 py-3 font-medium">Offer%</th>
@@ -71,8 +71,8 @@ export function AETab({ data, loading }: { data: AEData | null; loading: boolean
                 <tr key={rep.name} className="border-b border-[#1a1a1a] hover:bg-[#191919] transition-colors">
                   <td className="px-4 py-3 font-medium text-white">{rep.name}</td>
                   <td className="px-4 py-3 text-right text-gray-300">{rep.scheduled || "—"}</td>
-                  <td className="px-4 py-3 text-right text-gray-300">{rep.liveCalls || "—"}</td>
-                  <td className="px-4 py-3 text-right text-gray-300">{rep.offers || "—"}</td>
+                  <td className="px-4 py-3 text-right text-gray-300">{rep.showed || "—"}</td>
+                  <td className="px-4 py-3 text-right text-gray-300">{rep.offered || "—"}</td>
                   <td className="px-4 py-3 text-right text-gray-300">{rep.closes || "—"}</td>
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.showRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.offerRate} /></td>
@@ -89,8 +89,8 @@ export function AETab({ data, loading }: { data: AEData | null; loading: boolean
                 <tr className="bg-[#111] border-t border-[#333]">
                   <td className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Team Total</td>
                   <td className="px-4 py-3 text-right font-semibold text-white">{t.scheduled}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">{t.liveCalls}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">{t.offers}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-white">{t.showed}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-white">{t.offered}</td>
                   <td className="px-4 py-3 text-right font-semibold text-white">{t.closes}</td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.showRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.offerRate} /></td>

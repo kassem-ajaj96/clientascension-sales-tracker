@@ -1,4 +1,4 @@
-type Tab = "ae" | "sdr";
+type Tab = "ae" | "sdr" | "sdr-ae";
 
 interface TabNavProps {
   active: Tab;
@@ -8,6 +8,7 @@ interface TabNavProps {
 const TABS: { id: Tab; label: string }[] = [
   { id: "ae", label: "AE" },
   { id: "sdr", label: "SDR" },
+  { id: "sdr-ae", label: "SDR → AE" },
 ];
 
 export function TabNav({ active, onChange }: TabNavProps) {
