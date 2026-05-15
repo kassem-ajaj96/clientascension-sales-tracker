@@ -112,19 +112,14 @@ async function readDeals(dealIds: string[]): Promise<{ id: string; properties: D
   return deals;
 }
 
-async function getOwnerMap(): Promise<Record<string, string>> {
-  const result = await hs("/crm/v3/owners?limit=100");
-  const map: Record<string, string> = {};
-  for (const owner of result.results ?? []) {
-    map[owner.id] = owner.firstName ?? "";
-  }
-  return map;
-}
-
-function matchAE(ownerFirstName: string): string | null {
-  const name = ownerFirstName.toLowerCase();
-  return AE_NAMES.find((ae) => name.startsWith(ae.toLowerCase())) ?? null;
-}
+// Maps HubSpot owner ID → AE display name. No owners API call needed.
+const OWNER_TO_AE: Record<string, string> = {
+  "77779084": "Peter",   // Peter Hartrick
+  "76766176": "Logan",   // Logan Gott
+  "644809822": "Andrew", // Andrew Block
+  "654260366": "Andrew", // Andrew Block (duplicate entry)
+  // Ciaran and Fourkan IDs to be added once confirmed
+};
 
 type AEStats = { scheduled: number; showed: number; offered: number; closes: number; cashCollected: number };
 
@@ -142,7 +137,7 @@ export async function getHubSpotAEData(from: string, to: string) {
   const dealIds = await getDealIds(contactIds);
   if (dealIds.length === 0) return buildResponse({});
 
-  const [deals, ownerMap] = await Promise.all([readDeals(dealIds), getOwnerMap()]);
+  const deals = await readDeals(dealIds);
 
   const stats: Record<string, AEStats> = {};
   for (const name of AE_NAMES) stats[name] = emptyStats();
@@ -151,8 +146,7 @@ export async function getHubSpotAEData(from: string, to: string) {
     const { setter, dealstage, closed_lost_cause, hubspot_owner_id, amount } = deal.properties;
     if (!SDR_SETTERS.includes(setter)) continue;
 
-    const ownerFirstName = ownerMap[hubspot_owner_id] ?? "";
-    const ae = matchAE(ownerFirstName);
+    const ae = OWNER_TO_AE[hubspot_owner_id];
     if (!ae) continue;
 
     stats[ae].scheduled++;
