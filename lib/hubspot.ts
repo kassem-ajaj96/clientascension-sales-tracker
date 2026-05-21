@@ -91,10 +91,10 @@ async function searchDealsBySetter(): Promise<{ id: string; properties: DealProp
 
 // Maps HubSpot owner ID → AE display name.
 const OWNER_TO_AE: Record<string, string> = {
-  "77779084": "Peter",
-  "76766176": "Logan",
-  "644809822": "Andrew",
-  "654260366": "Andrew",
+  "191709153": "Peter",   // Peter Hartrick
+  "83317424": "Logan",    // Logan Pfizenmayer
+  "83529533": "Andrew",   // Andrew Strohm
+  // 83317423 and 85784009 = Ciaran / Fourkan (to be confirmed)
 };
 
 type AEStats = { scheduled: number; showed: number; offered: number; closes: number; cashCollected: number };
