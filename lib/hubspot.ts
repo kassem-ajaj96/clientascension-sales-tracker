@@ -54,23 +54,28 @@ interface DealProps {
   closed_lost_cause: string;
   hubspot_owner_id: string;
   amount: string;
+  aiaa_call_scheduled: string;
 }
 
-// Search deals where setter ∈ SDR_SETTERS AND aiaa_call_scheduled is in [fromMs, toMs].
-// aiaa_call_scheduled is a deal property (not contact).
-async function searchDeals(fromMs: number, toMs: number): Promise<{ id: string; properties: DealProps }[]> {
+// Search all deals where setter is one of the SDR names.
+// aiaa_call_scheduled is a deal property but may not be indexed for search filters,
+// so date filtering is done in-process after reading the property value.
+async function searchDealsBySetter(): Promise<{ id: string; properties: DealProps }[]> {
   const deals: { id: string; properties: DealProps }[] = [];
   let after: string | undefined;
   do {
     const body: Record<string, unknown> = {
       filterGroups: SDR_SETTERS.map((setter) => ({
-        filters: [
-          { propertyName: "setter", operator: "EQ", value: setter },
-          { propertyName: "aiaa_call_scheduled", operator: "GTE", value: String(fromMs) },
-          { propertyName: "aiaa_call_scheduled", operator: "LTE", value: String(toMs) },
-        ],
+        filters: [{ propertyName: "setter", operator: "EQ", value: setter }],
       })),
-      properties: ["setter", "dealstage", "closed_lost_cause", "hubspot_owner_id", "amount"],
+      properties: [
+        "setter",
+        "dealstage",
+        "closed_lost_cause",
+        "hubspot_owner_id",
+        "amount",
+        "aiaa_call_scheduled",
+      ],
       limit: 100,
     };
     if (after) body.after = after;
@@ -102,14 +107,19 @@ export async function getHubSpotAEData(from: string, to: string) {
   const fromMs = new Date(from).getTime();
   const toMs = new Date(`${to}T23:59:59`).getTime();
 
-  const deals = await searchDeals(fromMs, toMs);
+  const deals = await searchDealsBySetter();
 
   const stats: Record<string, AEStats> = {};
   for (const name of AE_NAMES) stats[name] = emptyStats();
 
   for (const deal of deals) {
-    const { setter, dealstage, closed_lost_cause, hubspot_owner_id, amount } = deal.properties;
+    const { setter, dealstage, closed_lost_cause, hubspot_owner_id, amount, aiaa_call_scheduled } = deal.properties;
     if (!SDR_SETTERS.includes(setter)) continue;
+
+    // Filter by aiaa_call_scheduled date (deal property, parsed as ISO string or ms)
+    if (!aiaa_call_scheduled) continue;
+    const callMs = new Date(aiaa_call_scheduled).getTime();
+    if (isNaN(callMs) || callMs < fromMs || callMs > toMs) continue;
 
     const ae = OWNER_TO_AE[hubspot_owner_id];
     if (!ae) continue;
