@@ -49,7 +49,6 @@ export function SDRTab({ data, loading }: { data: SDRData | null; loading: boole
                 <th className="text-center px-4 py-3 font-medium">Connection%</th>
                 <th className="text-center px-4 py-3 font-medium">Connect→Convo%</th>
                 <th className="text-center px-4 py-3 font-medium">Convo→Book%</th>
-                <th className="text-center px-4 py-3 font-medium">Connect→Book%</th>
                 <th className="text-center px-4 py-3 font-medium">Dial→Book%</th>
               </tr>
             </thead>
@@ -64,7 +63,6 @@ export function SDRTab({ data, loading }: { data: SDRData | null; loading: boole
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.connectionRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.connectToConvo} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.convoToBooking} /></td>
-                  <td className="px-4 py-3 text-center"><PctBadge value={rep.connectToBooking} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.dialToBooking} /></td>
                 </tr>
               ))}
@@ -80,7 +78,6 @@ export function SDRTab({ data, loading }: { data: SDRData | null; loading: boole
                   <td className="px-4 py-3 text-center"><PctBadge value={t.connectionRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.connectToConvo} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.convoToBooking} /></td>
-                  <td className="px-4 py-3 text-center"><PctBadge value={t.connectToBooking} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.dialToBooking} /></td>
                 </tr>
               )}
