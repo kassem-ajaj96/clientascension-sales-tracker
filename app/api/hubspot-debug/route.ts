@@ -44,14 +44,22 @@ export async function GET() {
       )
     ) as string[];
 
-    // Look up each owner ID individually
+    // List all owners
     const owners: Record<string, string> = {};
-    for (const id of ownerIds) {
-      try {
-        const o = await hs(`/crm/v3/owners/${id}`);
-        owners[id] = `${o.firstName ?? ""} ${o.lastName ?? ""}`.trim() || o.email || id;
-      } catch (_e) {
-        owners[id] = "lookup failed";
+    try {
+      const o = await hs("/crm/v3/owners?limit=100");
+      for (const owner of o.results ?? []) {
+        owners[String(owner.id)] = `${owner.firstName ?? ""} ${owner.lastName ?? ""}`.trim() || owner.email || owner.id;
+      }
+    } catch (_e) {
+      // Fall back to individual lookups
+      for (const id of ownerIds) {
+        try {
+          const o = await hs(`/crm/v3/owners/${id}`);
+          owners[id] = `${o.firstName ?? ""} ${o.lastName ?? ""}`.trim() || o.email || id;
+        } catch (_e2) {
+          owners[id] = "lookup failed";
+        }
       }
     }
 
