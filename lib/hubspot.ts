@@ -59,26 +59,23 @@ interface DealProps {
   aiaa_call_scheduled: string;
 }
 
-// Search all deals where setter is one of the SDR names (or a specific one).
-// aiaa_call_scheduled is a deal property but may not be indexed for search filters,
-// so date filtering is done in-process after reading the property value.
-async function searchDealsBySetter(setterFilter: string | null): Promise<{ id: string; properties: DealProps }[]> {
+async function searchDeals(
+  setterFilter: string | null,
+  extraFilters: Record<string, unknown>[] = [],
+  properties: string[] = ["setter", "dealstage", "closed_lost_cause", "hubspot_owner_id", "amount", "aiaa_call_scheduled"]
+): Promise<{ id: string; properties: DealProps }[]> {
   const setters = setterFilter ? [setterFilter] : SDR_SETTERS;
   const deals: { id: string; properties: DealProps }[] = [];
   let after: string | undefined;
   do {
     const body: Record<string, unknown> = {
       filterGroups: setters.map((setter) => ({
-        filters: [{ propertyName: "setter", operator: "EQ", value: setter }],
+        filters: [
+          { propertyName: "setter", operator: "EQ", value: setter },
+          ...extraFilters,
+        ],
       })),
-      properties: [
-        "setter",
-        "dealstage",
-        "closed_lost_cause",
-        "hubspot_owner_id",
-        "amount",
-        "aiaa_call_scheduled",
-      ],
+      properties,
       limit: 100,
     };
     if (after) body.after = after;
@@ -123,8 +120,19 @@ export async function getHubSpotAEData(from: string, to: string, setter: string 
   const fromMs = new Date(from).getTime();
   const toMs = new Date(`${to}T23:59:59`).getTime();
 
-  const [deals, ownerMap] = await Promise.all([
-    searchDealsBySetter(setter),
+  const [deals, closedWonDeals, ownerMap] = await Promise.all([
+    // Scheduled/Showed/Offered: all setter deals, date-filtered in-process by aiaa_call_scheduled
+    searchDeals(setter),
+    // Closes/Cash: Closed Won deals filtered by closedate in the dashboard range
+    searchDeals(
+      setter,
+      [
+        { propertyName: "dealstage", operator: "EQ", value: CLOSED_WON },
+        { propertyName: "closedate", operator: "GTE", value: String(fromMs) },
+        { propertyName: "closedate", operator: "LTE", value: String(toMs) },
+      ],
+      ["setter", "hubspot_owner_id", "amount"]
+    ),
     buildOwnerMap(),
   ]);
 
@@ -132,10 +140,9 @@ export async function getHubSpotAEData(from: string, to: string, setter: string 
   for (const name of AE_NAMES) stats[name] = emptyStats();
 
   for (const deal of deals) {
-    const { setter, dealstage, closed_lost_cause, hubspot_owner_id, amount, aiaa_call_scheduled } = deal.properties;
-    if (!SDR_SETTERS.includes(setter)) continue;
+    const { setter: dealSetter, dealstage, closed_lost_cause, hubspot_owner_id, aiaa_call_scheduled } = deal.properties;
+    if (!SDR_SETTERS.includes(dealSetter)) continue;
 
-    // Filter by aiaa_call_scheduled date (deal property, parsed as ISO string or ms)
     if (!aiaa_call_scheduled) continue;
     const callMs = new Date(aiaa_call_scheduled).getTime();
     if (isNaN(callMs) || callMs < fromMs || callMs > toMs) continue;
@@ -146,10 +153,14 @@ export async function getHubSpotAEData(from: string, to: string, setter: string 
     stats[ae].scheduled++;
     if (SHOWED_STAGES.has(dealstage)) stats[ae].showed++;
     if (isOffered(dealstage, closed_lost_cause ?? "")) stats[ae].offered++;
-    if (dealstage === CLOSED_WON) {
-      stats[ae].closes++;
-      stats[ae].cashCollected += parseFloat(amount || "0") || 0;
-    }
+  }
+
+  for (const deal of closedWonDeals) {
+    const { hubspot_owner_id, amount } = deal.properties;
+    const ae = ownerMap[hubspot_owner_id];
+    if (!ae) continue;
+    stats[ae].closes++;
+    stats[ae].cashCollected += parseFloat(amount || "0") || 0;
   }
 
   return buildResponse(stats);
