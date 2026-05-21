@@ -14,10 +14,16 @@ export function Header({ from, to, onFromChange, onToChange, onApply }: HeaderPr
 
   return (
     <header className="flex items-center justify-between px-6 py-4 border-b border-[#1a1a1a] bg-black sticky top-0 z-10">
-      <div className="font-bold text-base tracking-wide">
+      <div className="flex items-center gap-2 font-bold text-base tracking-wide">
         <span className="text-white">CLIENT </span>
         <span className="text-[#e53e1e]">ASCENSION</span>
-        <span className="text-gray-500 font-normal text-sm ml-2">Sales Dashboard</span>
+        {/* CA pyramid logo */}
+        <svg width="20" height="22" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="10,0 20,18 0,18" fill="#e53e1e" />
+          <polygon points="10,4 18,18 10,14" fill="#c0321a" />
+          <polygon points="10,4 2,18 10,14" fill="#ff6644" opacity="0.7" />
+        </svg>
+        <span className="text-gray-500 font-normal text-sm">Sales Dashboard</span>
       </div>
       <div className="flex items-center gap-3">
         <span className="text-gray-500 text-xs uppercase tracking-wider">From</span>
