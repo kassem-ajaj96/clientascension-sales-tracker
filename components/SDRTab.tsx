@@ -23,7 +23,8 @@ export function SDRTab({ data, loading }: { data: SDRData | null; loading: boole
   const t = data?.totals;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6">
+      <div className="space-y-6 w-fit mx-auto">
       {/* KPI Cards */}
       <div className="grid grid-cols-4 gap-4">
         <KPICard label="Total Dials" value={t ? String(t.dials) : "—"} color="blue" />
@@ -84,6 +85,7 @@ export function SDRTab({ data, loading }: { data: SDRData | null; loading: boole
             </tbody>
           </table>
         )}
+      </div>
       </div>
     </div>
   );

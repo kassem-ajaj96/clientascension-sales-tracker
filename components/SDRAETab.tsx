@@ -45,7 +45,8 @@ export function SDRAETab({
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6">
+      <div className="space-y-6 w-fit mx-auto">
       <div className="grid grid-cols-4 gap-4">
         <div className="col-span-1">
           <KPICard label="Show Rate" value={t ? fmtPct(t.showRate) : "—"} color="blue" />
@@ -119,6 +120,7 @@ export function SDRAETab({
             </tbody>
           </table>
         )}
+      </div>
       </div>
     </div>
   );
