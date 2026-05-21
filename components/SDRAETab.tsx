@@ -80,7 +80,7 @@ export function SDRAETab({
               <tr className="border-b border-[#222] text-gray-400 text-xs uppercase tracking-wide">
                 <th className="text-left px-4 py-3 font-medium">Rep</th>
                 <th className="text-right px-4 py-3 font-medium">Calls</th>
-                <th className="text-right px-4 py-3 font-medium">Mtg Sched</th>
+                <th className="text-right px-4 py-3 font-medium">Meeting Sched</th>
                 <th className="text-right px-4 py-3 font-medium">Showed</th>
                 <th className="text-right px-4 py-3 font-medium">Offered</th>
                 <th className="text-right px-4 py-3 font-medium">Closes</th>
