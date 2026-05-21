@@ -13,15 +13,15 @@ const TABS: { id: Tab; label: string }[] = [
 
 export function TabNav({ active, onChange }: TabNavProps) {
   return (
-    <nav className="flex border-b border-[#222] px-6">
+    <nav className="flex border-b border-[#1a1a1a] px-6 bg-black">
       {TABS.map(({ id, label }) => (
         <button
           key={id}
           onClick={() => onChange(id)}
           className={`py-4 px-4 text-sm font-medium mr-1 border-b-2 transition-colors ${
             active === id
-              ? "border-blue-500 text-white"
-              : "border-transparent text-gray-400 hover:text-gray-200"
+              ? "border-[#e53e1e] text-white"
+              : "border-transparent text-gray-500 hover:text-gray-300"
           }`}
         >
           {label}

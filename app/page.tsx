@@ -76,7 +76,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d]">
+    <div className="min-h-screen bg-black">
       <Header
         from={pendingFrom}
         to={pendingTo}

@@ -56,8 +56,8 @@ export function SDRAETab({
                 onClick={() => handleSetter(s)}
                 className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                   activeSetter === s
-                    ? "bg-blue-600 text-white"
-                    : "bg-[#1e1e1e] text-gray-400 hover:text-gray-200 border border-[#333]"
+                    ? "bg-[#e53e1e] text-white"
+                    : "bg-[#111] text-gray-500 hover:text-gray-200 border border-[#2a2a2a]"
                 }`}
               >
                 {s}
@@ -70,14 +70,14 @@ export function SDRAETab({
         <KPICard label="Team Closes" value={t ? String(t.closes) : "—"} color="gold" />
       </div>
 
-      <div className="bg-[#141414] border border-[#222] rounded-lg overflow-hidden">
+      <div className="bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg overflow-hidden">
         {loading && (
           <div className="text-center text-gray-500 py-10 text-sm">Loading...</div>
         )}
         {!loading && (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#222] text-gray-400 text-xs uppercase tracking-wide">
+              <tr className="border-b border-[#1e1e1e] text-gray-500 text-xs uppercase tracking-wide">
                 <th className="text-left px-4 py-3 font-medium">Rep</th>
                 <th className="text-right px-4 py-3 font-medium">Calls</th>
                 <th className="text-right px-4 py-3 font-medium">Meeting Sched</th>
@@ -91,7 +91,7 @@ export function SDRAETab({
             </thead>
             <tbody>
               {data?.reps.map((rep) => (
-                <tr key={rep.name} className="border-b border-[#1a1a1a] hover:bg-[#191919] transition-colors">
+                <tr key={rep.name} className="border-b border-[#111] hover:bg-[#111] transition-colors">
                   <td className="px-4 py-3 font-medium text-white">{rep.name}</td>
                   <td className="px-4 py-3 text-right text-gray-300">{rep.scheduled || "—"}</td>
                   <td className="px-4 py-3 text-right text-gray-300">{rep.meetingScheduled || "—"}</td>
@@ -104,7 +104,7 @@ export function SDRAETab({
                 </tr>
               ))}
               {t && (
-                <tr className="bg-[#111] border-t border-[#333]">
+                <tr className="bg-[#0a0a0a] border-t border-[#1e1e1e]">
                   <td className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Team Total</td>
                   <td className="px-4 py-3 text-right font-semibold text-white">{t.scheduled}</td>
                   <td className="px-4 py-3 text-right font-semibold text-white">{t.meetingScheduled}</td>

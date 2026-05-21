@@ -33,14 +33,14 @@ export function SDRTab({ data, loading }: { data: SDRData | null; loading: boole
       </div>
 
       {/* Table */}
-      <div className="bg-[#141414] border border-[#222] rounded-lg overflow-hidden">
+      <div className="bg-black border border-[#1e1e1e] rounded-lg overflow-hidden">
         {loading && (
           <div className="text-center text-gray-500 py-10 text-sm">Loading...</div>
         )}
         {!loading && (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#222] text-gray-400 text-xs uppercase tracking-wide">
+              <tr className="border-b border-[#1e1e1e] text-gray-500 text-xs uppercase tracking-wide">
                 <th className="text-left px-4 py-3 font-medium">Rep</th>
                 <th className="text-right px-4 py-3 font-medium">Dials</th>
                 <th className="text-right px-4 py-3 font-medium">Connects</th>
@@ -55,7 +55,7 @@ export function SDRTab({ data, loading }: { data: SDRData | null; loading: boole
             </thead>
             <tbody>
               {data?.reps.map((rep) => (
-                <tr key={rep.name} className="border-b border-[#1a1a1a] hover:bg-[#191919] transition-colors">
+                <tr key={rep.name} className="border-b border-[#111] hover:bg-[#111] transition-colors">
                   <td className="px-4 py-3 font-medium text-white">{rep.name}</td>
                   <td className="px-4 py-3 text-right text-gray-300">{rep.dials || "—"}</td>
                   <td className="px-4 py-3 text-right text-gray-300">{rep.connects || "—"}</td>
@@ -71,7 +71,7 @@ export function SDRTab({ data, loading }: { data: SDRData | null; loading: boole
 
               {/* Team Total */}
               {t && (
-                <tr className="bg-[#111] border-t border-[#333]">
+                <tr className="bg-[#0a0a0a] border-t border-[#1e1e1e]">
                   <td className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Team Total</td>
                   <td className="px-4 py-3 text-right font-semibold text-white">{t.dials}</td>
                   <td className="px-4 py-3 text-right font-semibold text-white">{t.connects}</td>
