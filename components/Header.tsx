@@ -18,10 +18,26 @@ export function Header({ from, to, onFromChange, onToChange, onApply }: HeaderPr
         <span className="text-white">CLIENT </span>
         <span className="text-[#e53e1e]">ASCENSION</span>
         {/* CA pyramid logo */}
-        <svg width="20" height="22" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <polygon points="10,0 20,18 0,18" fill="#e53e1e" />
-          <polygon points="10,4 18,18 10,14" fill="#c0321a" />
-          <polygon points="10,4 2,18 10,14" fill="#ff6644" opacity="0.7" />
+        <svg width="22" height="22" viewBox="0 0 44 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <clipPath id="lf">
+              <polygon points="22,2 2,40 22,40"/>
+            </clipPath>
+          </defs>
+          {/* Left face — dark red */}
+          <polygon points="22,2 2,40 22,40" fill="#b02a12"/>
+          {/* Hatching on left face */}
+          <g clipPath="url(#lf)">
+            {[0,5,10,15,20,25,30].map((o) => (
+              <line key={o} x1={22 + o} y1={2} x2={2 + o} y2={42} stroke="#1a0805" strokeWidth="1.4"/>
+            ))}
+          </g>
+          {/* Right face — bright red */}
+          <polygon points="22,2 42,40 22,40" fill="#e53e1e"/>
+          {/* Outline */}
+          <polygon points="22,2 2,40 42,40" fill="none" stroke="#1a0805" strokeWidth="2" strokeLinejoin="round"/>
+          {/* Center divider */}
+          <line x1="22" y1="2" x2="22" y2="40" stroke="#1a0805" strokeWidth="1.5"/>
         </svg>
         <span className="text-gray-500 font-normal text-sm">Sales Dashboard</span>
       </div>
