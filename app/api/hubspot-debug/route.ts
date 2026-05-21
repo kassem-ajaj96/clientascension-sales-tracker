@@ -36,13 +36,13 @@ export async function GET() {
       }),
     });
 
-    const ownerIds = [
-      ...new Set(
+    const ownerIds = Array.from(
+      new Set(
         dealsResult.results
           .map((d: { properties: { hubspot_owner_id: string } }) => d.properties.hubspot_owner_id)
           .filter(Boolean)
-      ),
-    ] as string[];
+      )
+    ) as string[];
 
     // Try to look up owner names (requires crm.objects.owners.read scope)
     let owners: Record<string, string> = {};
@@ -54,7 +54,7 @@ export async function GET() {
         }
         if (!o.paging?.next) break;
       }
-    } catch {
+    } catch (_e) {
       owners = { error: "owners API not accessible (missing scope)" } as Record<string, string>;
     }
 
