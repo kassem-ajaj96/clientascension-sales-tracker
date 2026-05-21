@@ -48,66 +48,6 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return out;
 }
 
-// Search ALL deals where setter is one of the SDR names (no date filter — date filtering
-// happens via the contact's aiaa_call_scheduled property after association lookup).
-async function searchDealsBySetter(): Promise<string[]> {
-  const ids: string[] = [];
-  let after: string | undefined;
-  do {
-    const body: Record<string, unknown> = {
-      filterGroups: SDR_SETTERS.map((setter) => ({
-        filters: [{ propertyName: "setter", operator: "EQ", value: setter }],
-      })),
-      properties: ["hs_object_id"],
-      limit: 100,
-    };
-    if (after) body.after = after;
-    const result = await hs("/crm/v3/objects/deals/search", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-    ids.push(...result.results.map((d: { id: string }) => d.id));
-    after = result.paging?.next?.after;
-  } while (after);
-  return ids;
-}
-
-// Returns Map<dealId, contactId> — one contact per deal (first associated contact).
-async function getContactsForDeals(dealIds: string[]): Promise<Map<string, string>> {
-  const map = new Map<string, string>();
-  for (const batch of chunk(dealIds, 100)) {
-    const result = await hs("/crm/v3/associations/deals/contacts/batch/read", {
-      method: "POST",
-      body: JSON.stringify({ inputs: batch.map((id) => ({ id })) }),
-    });
-    for (const item of result.results ?? []) {
-      if (item.to?.length > 0) {
-        map.set(item.from.id, item.to[0].id);
-      }
-    }
-  }
-  return map;
-}
-
-// Returns Map<contactId, aiaa_call_scheduled_ms>.
-async function readContactDates(contactIds: string[]): Promise<Map<string, number>> {
-  const map = new Map<string, number>();
-  for (const batch of chunk(contactIds, 100)) {
-    const result = await hs("/crm/v3/objects/contacts/batch/read", {
-      method: "POST",
-      body: JSON.stringify({
-        inputs: batch.map((id) => ({ id })),
-        properties: ["aiaa_call_scheduled"],
-      }),
-    });
-    for (const contact of result.results ?? []) {
-      const val = contact.properties?.aiaa_call_scheduled;
-      if (val) map.set(contact.id, Number(val));
-    }
-  }
-  return map;
-}
-
 interface DealProps {
   setter: string;
   dealstage: string;
@@ -116,18 +56,31 @@ interface DealProps {
   amount: string;
 }
 
-async function readDeals(dealIds: string[]): Promise<{ id: string; properties: DealProps }[]> {
+// Search deals where setter ∈ SDR_SETTERS AND aiaa_call_scheduled is in [fromMs, toMs].
+// aiaa_call_scheduled is a deal property (not contact).
+async function searchDeals(fromMs: number, toMs: number): Promise<{ id: string; properties: DealProps }[]> {
   const deals: { id: string; properties: DealProps }[] = [];
-  for (const batch of chunk(dealIds, 100)) {
-    const result = await hs("/crm/v3/objects/deals/batch/read", {
+  let after: string | undefined;
+  do {
+    const body: Record<string, unknown> = {
+      filterGroups: SDR_SETTERS.map((setter) => ({
+        filters: [
+          { propertyName: "setter", operator: "EQ", value: setter },
+          { propertyName: "aiaa_call_scheduled", operator: "GTE", value: String(fromMs) },
+          { propertyName: "aiaa_call_scheduled", operator: "LTE", value: String(toMs) },
+        ],
+      })),
+      properties: ["setter", "dealstage", "closed_lost_cause", "hubspot_owner_id", "amount"],
+      limit: 100,
+    };
+    if (after) body.after = after;
+    const result = await hs("/crm/v3/objects/deals/search", {
       method: "POST",
-      body: JSON.stringify({
-        inputs: batch.map((id) => ({ id })),
-        properties: ["setter", "dealstage", "closed_lost_cause", "hubspot_owner_id", "amount"],
-      }),
+      body: JSON.stringify(body),
     });
     deals.push(...(result.results ?? []));
-  }
+    after = result.paging?.next?.after;
+  } while (after);
   return deals;
 }
 
@@ -149,15 +102,7 @@ export async function getHubSpotAEData(from: string, to: string) {
   const fromMs = new Date(from).getTime();
   const toMs = new Date(`${to}T23:59:59`).getTime();
 
-  const allDealIds = await searchDealsBySetter();
-  if (allDealIds.length === 0) return buildResponse({});
-
-  const dealToContact = await getContactsForDeals(allDealIds);
-  const contactIds = Array.from(new Set(dealToContact.values()));
-  if (contactIds.length === 0) return buildResponse({});
-
-  const contactDates = await readContactDates(contactIds);
-  const deals = await readDeals(allDealIds);
+  const deals = await searchDeals(fromMs, toMs);
 
   const stats: Record<string, AEStats> = {};
   for (const name of AE_NAMES) stats[name] = emptyStats();
@@ -165,11 +110,6 @@ export async function getHubSpotAEData(from: string, to: string) {
   for (const deal of deals) {
     const { setter, dealstage, closed_lost_cause, hubspot_owner_id, amount } = deal.properties;
     if (!SDR_SETTERS.includes(setter)) continue;
-
-    const contactId = dealToContact.get(deal.id);
-    if (!contactId) continue;
-    const callDate = contactDates.get(contactId);
-    if (!callDate || callDate < fromMs || callDate > toMs) continue;
 
     const ae = OWNER_TO_AE[hubspot_owner_id];
     if (!ae) continue;
