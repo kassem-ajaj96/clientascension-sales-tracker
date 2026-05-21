@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { KPICard } from "./KPICard";
 import { PctBadge } from "./PctBadge";
 
@@ -33,18 +34,53 @@ function fmtPct(v: number | null) {
   return `${(v * 100).toFixed(1)}%`;
 }
 
-export function SDRAETab({ data, loading }: { data: SDRAEData | null; loading: boolean }) {
+const SETTERS = ["All", "Antwon", "Erten", "Noah"] as const;
+type Setter = typeof SETTERS[number];
+
+export function SDRAETab({
+  data,
+  loading,
+  onSetterChange,
+}: {
+  data: SDRAEData | null;
+  loading: boolean;
+  onSetterChange: (setter: string | null) => void;
+}) {
+  const [activeSetter, setActiveSetter] = useState<Setter>("All");
   const t = data?.totals;
+
+  function handleSetter(s: Setter) {
+    setActiveSetter(s);
+    onSetterChange(s === "All" ? null : s);
+  }
 
   return (
     <div className="p-6 space-y-6">
       <div className="grid grid-cols-5 gap-4">
-        <KPICard label="Show Rate" value={t ? fmtPct(t.showRate) : "—"} color="blue" />
+        <div className="col-span-1">
+          <KPICard label="Show Rate" value={t ? fmtPct(t.showRate) : "—"} color="blue" />
+          <div className="flex gap-1 mt-2 flex-wrap">
+            {SETTERS.map((s) => (
+              <button
+                key={s}
+                onClick={() => handleSetter(s)}
+                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                  activeSetter === s
+                    ? "bg-blue-600 text-white"
+                    : "bg-[#1e1e1e] text-gray-400 hover:text-gray-200 border border-[#333]"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
         <KPICard label="Offer Rate" value={t ? fmtPct(t.offerRate) : "—"} color="green" />
         <KPICard label="Close Rate" value={t ? fmtPct(t.closeRate) : "—"} color="purple" />
         <KPICard label="Team Closes" value={t ? String(t.closes) : "—"} color="gold" />
         <KPICard label="Cash Collected" value={t ? fmt$(t.cashCollected) : "—"} color="green" />
       </div>
+
 
       <div className="bg-[#141414] border border-[#222] rounded-lg overflow-hidden">
         {loading && (

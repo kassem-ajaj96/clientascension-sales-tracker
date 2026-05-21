@@ -14,9 +14,10 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const from = searchParams.get("from") || defaultFrom();
   const to = searchParams.get("to") || defaultTo();
+  const setter = searchParams.get("setter") || null;
 
   try {
-    const data = await getHubSpotAEData(from, to);
+    const data = await getHubSpotAEData(from, to, setter);
     return NextResponse.json(data);
   } catch (err) {
     console.error("HubSpot error:", err);

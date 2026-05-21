@@ -3,24 +3,26 @@ const BASE = "https://api.hubapi.com";
 const SDR_SETTERS = ["Antwon", "Erten", "Noah"];
 const AE_NAMES = ["Peter", "Logan", "Andrew", "Ciaran", "Fourkan"];
 
+// AIAA Pipeline stage IDs
 const SHOWED_STAGES = new Set([
-  "252639828",
-  "presentationscheduled",
-  "decisionmakerboughtin",
-  "closedwon",
-  "closedlost",
+  "1164856622",  // Holding Nurturing
+  "1164987317",  // Follow Up
+  "1164987318",  // Closed Won
+  "1164987319",  // Closed Lost
 ]);
 
 const OFFERED_STAGES = new Set([
-  "252639828",
-  "presentationscheduled",
-  "decisionmakerboughtin",
-  "closedwon",
+  "1164856622",  // Holding Nurturing
+  "1164987317",  // Follow Up
+  "1164987318",  // Closed Won
 ]);
+
+const CLOSED_WON = "1164987318";
+const CLOSED_LOST = "1164987319";
 
 function isOffered(stage: string, closedLostCause: string): boolean {
   if (OFFERED_STAGES.has(stage)) return true;
-  if (stage === "closedlost" && closedLostCause?.startsWith("Offered - ")) return true;
+  if (stage === CLOSED_LOST && closedLostCause?.startsWith("Offered - ")) return true;
   return false;
 }
 
@@ -57,15 +59,16 @@ interface DealProps {
   aiaa_call_scheduled: string;
 }
 
-// Search all deals where setter is one of the SDR names.
+// Search all deals where setter is one of the SDR names (or a specific one).
 // aiaa_call_scheduled is a deal property but may not be indexed for search filters,
 // so date filtering is done in-process after reading the property value.
-async function searchDealsBySetter(): Promise<{ id: string; properties: DealProps }[]> {
+async function searchDealsBySetter(setterFilter: string | null): Promise<{ id: string; properties: DealProps }[]> {
+  const setters = setterFilter ? [setterFilter] : SDR_SETTERS;
   const deals: { id: string; properties: DealProps }[] = [];
   let after: string | undefined;
   do {
     const body: Record<string, unknown> = {
-      filterGroups: SDR_SETTERS.map((setter) => ({
+      filterGroups: setters.map((setter) => ({
         filters: [{ propertyName: "setter", operator: "EQ", value: setter }],
       })),
       properties: [
@@ -116,12 +119,12 @@ function emptyStats(): AEStats {
   return { scheduled: 0, showed: 0, offered: 0, closes: 0, cashCollected: 0 };
 }
 
-export async function getHubSpotAEData(from: string, to: string) {
+export async function getHubSpotAEData(from: string, to: string, setter: string | null = null) {
   const fromMs = new Date(from).getTime();
   const toMs = new Date(`${to}T23:59:59`).getTime();
 
   const [deals, ownerMap] = await Promise.all([
-    searchDealsBySetter(),
+    searchDealsBySetter(setter),
     buildOwnerMap(),
   ]);
 
@@ -143,7 +146,7 @@ export async function getHubSpotAEData(from: string, to: string) {
     stats[ae].scheduled++;
     if (SHOWED_STAGES.has(dealstage)) stats[ae].showed++;
     if (isOffered(dealstage, closed_lost_cause ?? "")) stats[ae].offered++;
-    if (dealstage === "closedwon") {
+    if (dealstage === CLOSED_WON) {
       stats[ae].closes++;
       stats[ae].cashCollected += parseFloat(amount || "0") || 0;
     }

@@ -51,10 +51,13 @@ export default function DashboardPage() {
     }
   }, []);
 
-  const fetchHS = useCallback(async (f: string, t: string) => {
+  const fetchHS = useCallback(async (f: string, t: string, setter: string | null = null) => {
     setHSLoading(true);
     try {
-      const res = await fetch(`/api/hubspot?from=${f}&to=${t}`);
+      const url = setter
+        ? `/api/hubspot?from=${f}&to=${t}&setter=${encodeURIComponent(setter)}`
+        : `/api/hubspot?from=${f}&to=${t}`;
+      const res = await fetch(url);
       if (res.ok) setHSData(await res.json());
     } finally {
       setHSLoading(false);
@@ -84,7 +87,13 @@ export default function DashboardPage() {
       <TabNav active={tab} onChange={setTab} />
       {tab === "ae" && <AETab data={aeData} loading={aeLoading} />}
       {tab === "sdr" && <SDRTab data={sdrData} loading={sdrLoading} />}
-      {tab === "sdr-ae" && <SDRAETab data={hsData} loading={hsLoading} />}
+      {tab === "sdr-ae" && (
+        <SDRAETab
+          data={hsData}
+          loading={hsLoading}
+          onSetterChange={(setter) => fetchHS(from, to, setter)}
+        />
+      )}
     </div>
   );
 }
