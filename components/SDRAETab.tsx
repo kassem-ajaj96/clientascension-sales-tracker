@@ -8,25 +8,14 @@ interface SDRAERep {
   showed: number;
   offered: number;
   closes: number;
-  cashCollected: number;
   showRate: number | null;
   offerRate: number | null;
   closeRate: number | null;
-  cashPerCall: number | null;
 }
 
 interface SDRAEData {
   reps: SDRAERep[];
   totals: Omit<SDRAERep, "name">;
-}
-
-function fmt$(n: number) {
-  return n.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
 }
 
 function fmtPct(v: number | null) {
@@ -56,7 +45,7 @@ export function SDRAETab({
 
   return (
     <div className="p-6 space-y-6">
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <div className="col-span-1">
           <KPICard label="Show Rate" value={t ? fmtPct(t.showRate) : "—"} color="blue" />
           <div className="flex gap-1 mt-2 flex-wrap">
@@ -78,9 +67,7 @@ export function SDRAETab({
         <KPICard label="Offer Rate" value={t ? fmtPct(t.offerRate) : "—"} color="green" />
         <KPICard label="Close Rate" value={t ? fmtPct(t.closeRate) : "—"} color="purple" />
         <KPICard label="Team Closes" value={t ? String(t.closes) : "—"} color="gold" />
-        <KPICard label="Cash Collected" value={t ? fmt$(t.cashCollected) : "—"} color="green" />
       </div>
-
 
       <div className="bg-[#141414] border border-[#222] rounded-lg overflow-hidden">
         {loading && (
@@ -98,8 +85,6 @@ export function SDRAETab({
                 <th className="text-center px-4 py-3 font-medium">Show%</th>
                 <th className="text-center px-4 py-3 font-medium">Offer%</th>
                 <th className="text-center px-4 py-3 font-medium">Close%</th>
-                <th className="text-right px-4 py-3 font-medium">Cash Collected</th>
-                <th className="text-right px-4 py-3 font-medium">Cash/Call</th>
               </tr>
             </thead>
             <tbody>
@@ -113,12 +98,6 @@ export function SDRAETab({
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.showRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.offerRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.closeRate} /></td>
-                  <td className="px-4 py-3 text-right text-green-400 font-medium">
-                    {rep.cashCollected > 0 ? fmt$(rep.cashCollected) : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right text-green-400 font-medium">
-                    {rep.cashPerCall !== null ? fmt$(rep.cashPerCall) : "—"}
-                  </td>
                 </tr>
               ))}
               {t && (
@@ -131,10 +110,6 @@ export function SDRAETab({
                   <td className="px-4 py-3 text-center"><PctBadge value={t.showRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.offerRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.closeRate} /></td>
-                  <td className="px-4 py-3 text-right font-semibold text-green-400">{fmt$(t.cashCollected)}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-green-400">
-                    {t.cashPerCall !== null ? fmt$(t.cashPerCall) : "—"}
-                  </td>
                 </tr>
               )}
             </tbody>

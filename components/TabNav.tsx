@@ -6,9 +6,9 @@ interface TabNavProps {
 }
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "ae", label: "AE" },
-  { id: "sdr", label: "SDR" },
-  { id: "sdr-ae", label: "SDR → AE" },
+  { id: "ae", label: "Closer" },
+  { id: "sdr", label: "Setter" },
+  { id: "sdr-ae", label: "Setter → Closer" },
 ];
 
 export function TabNav({ active, onChange }: TabNavProps) {
