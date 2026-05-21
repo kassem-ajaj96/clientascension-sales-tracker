@@ -44,18 +44,15 @@ export async function GET() {
       )
     ) as string[];
 
-    // Try to look up owner names (requires crm.objects.owners.read scope)
-    let owners: Record<string, string> = {};
-    try {
-      for (let after = 0; ; after += 100) {
-        const o = await hs(`/crm/v3/owners?limit=100&after=${after}`);
-        for (const owner of o.results ?? []) {
-          owners[owner.id] = `${owner.firstName ?? ""} ${owner.lastName ?? ""}`.trim() || owner.email;
-        }
-        if (!o.paging?.next) break;
+    // Look up each owner ID individually
+    const owners: Record<string, string> = {};
+    for (const id of ownerIds) {
+      try {
+        const o = await hs(`/crm/v3/owners/${id}`);
+        owners[id] = `${o.firstName ?? ""} ${o.lastName ?? ""}`.trim() || o.email || id;
+      } catch (_e) {
+        owners[id] = "lookup failed";
       }
-    } catch (_e) {
-      owners = { error: "owners API not accessible (missing scope)" } as Record<string, string>;
     }
 
     return NextResponse.json({
