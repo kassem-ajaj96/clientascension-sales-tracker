@@ -17,6 +17,7 @@ const OFFERED_STAGES = new Set([
   "1164987318",  // Closed Won
 ]);
 
+const MEETING_SCHEDULED = "1164856622";
 const CLOSED_WON = "1164987318";
 const CLOSED_LOST = "1164987319";
 
@@ -110,10 +111,10 @@ async function buildOwnerMap(): Promise<Record<string, string>> {
   return map;
 }
 
-type AEStats = { scheduled: number; showed: number; offered: number; closes: number; cashCollected: number };
+type AEStats = { scheduled: number; meetingScheduled: number; showed: number; offered: number; closes: number; cashCollected: number };
 
 function emptyStats(): AEStats {
-  return { scheduled: 0, showed: 0, offered: 0, closes: 0, cashCollected: 0 };
+  return { scheduled: 0, meetingScheduled: 0, showed: 0, offered: 0, closes: 0, cashCollected: 0 };
 }
 
 export async function getHubSpotAEData(from: string, to: string, setter: string | null = null) {
@@ -151,6 +152,7 @@ export async function getHubSpotAEData(from: string, to: string, setter: string 
     if (!ae) continue;
 
     stats[ae].scheduled++;
+    if (dealstage === MEETING_SCHEDULED) stats[ae].meetingScheduled++;
     if (SHOWED_STAGES.has(dealstage)) stats[ae].showed++;
     if (isOffered(dealstage, closed_lost_cause ?? "")) stats[ae].offered++;
   }
@@ -172,6 +174,7 @@ function buildResponse(stats: Record<string, AEStats>) {
     return {
       name,
       scheduled: s.scheduled,
+      meetingScheduled: s.meetingScheduled,
       showed: s.showed,
       offered: s.offered,
       closes: s.closes,
@@ -186,6 +189,7 @@ function buildResponse(stats: Record<string, AEStats>) {
   const raw = reps.reduce(
     (acc, r) => ({
       scheduled: acc.scheduled + r.scheduled,
+      meetingScheduled: acc.meetingScheduled + r.meetingScheduled,
       showed: acc.showed + r.showed,
       offered: acc.offered + r.offered,
       closes: acc.closes + r.closes,
