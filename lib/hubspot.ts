@@ -89,13 +89,26 @@ async function searchDealsBySetter(): Promise<{ id: string; properties: DealProp
   return deals;
 }
 
-// Maps HubSpot owner ID → AE display name.
-const OWNER_TO_AE: Record<string, string> = {
-  "191709153": "Peter",   // Peter Hartrick
-  "83317424": "Logan",    // Logan Pfizenmayer
-  "83529533": "Andrew",   // Andrew Strohm
-  // 83317423 and 85784009 = Ciaran / Fourkan (to be confirmed)
-};
+async function buildOwnerMap(): Promise<Record<string, string>> {
+  const map: Record<string, string> = {};
+  try {
+    const result = await hs("/crm/v3/owners?limit=100");
+    for (const owner of result.results ?? []) {
+      const firstName = (owner.firstName ?? "").trim();
+      if (AE_NAMES.includes(firstName)) {
+        map[String(owner.id)] = firstName;
+      }
+    }
+  } catch (_e) {
+    // Fall back to hardcoded map if owners API fails
+    Object.assign(map, {
+      "191709153": "Peter",
+      "83317424": "Logan",
+      "83529533": "Andrew",
+    });
+  }
+  return map;
+}
 
 type AEStats = { scheduled: number; showed: number; offered: number; closes: number; cashCollected: number };
 
@@ -107,7 +120,10 @@ export async function getHubSpotAEData(from: string, to: string) {
   const fromMs = new Date(from).getTime();
   const toMs = new Date(`${to}T23:59:59`).getTime();
 
-  const deals = await searchDealsBySetter();
+  const [deals, ownerMap] = await Promise.all([
+    searchDealsBySetter(),
+    buildOwnerMap(),
+  ]);
 
   const stats: Record<string, AEStats> = {};
   for (const name of AE_NAMES) stats[name] = emptyStats();
@@ -121,7 +137,7 @@ export async function getHubSpotAEData(from: string, to: string) {
     const callMs = new Date(aiaa_call_scheduled).getTime();
     if (isNaN(callMs) || callMs < fromMs || callMs > toMs) continue;
 
-    const ae = OWNER_TO_AE[hubspot_owner_id];
+    const ae = ownerMap[hubspot_owner_id];
     if (!ae) continue;
 
     stats[ae].scheduled++;
