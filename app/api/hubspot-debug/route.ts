@@ -63,10 +63,47 @@ export async function GET() {
       }
     }
 
+    // Get unique deal stages
+    const stagesResult = await hs("/crm/v3/objects/deals/search", {
+      method: "POST",
+      body: JSON.stringify({
+        filterGroups: [
+          { filters: [{ propertyName: "setter", operator: "EQ", value: "Antwon" }] },
+          { filters: [{ propertyName: "setter", operator: "EQ", value: "Erten" }] },
+          { filters: [{ propertyName: "setter", operator: "EQ", value: "Noah" }] },
+        ],
+        properties: ["dealstage"],
+        limit: 100,
+      }),
+    });
+
+    const uniqueStages = Array.from(
+      new Set(
+        stagesResult.results.map((d: { properties: { dealstage: string } }) => d.properties.dealstage)
+      )
+    );
+
+    // Get pipeline stages info
+    let pipelineStages: Record<string, string> = {};
+    try {
+      const pipelines = await hs("/crm/v3/pipelines/deals");
+      for (const pipeline of pipelines.results ?? []) {
+        for (const stage of pipeline.stages ?? []) {
+          pipelineStages[stage.id] = `${pipeline.label} → ${stage.label}`;
+        }
+      }
+    } catch (_e) {
+      pipelineStages = { error: "pipeline lookup failed" };
+    }
+
     return NextResponse.json({
       totalDeals: dealsResult.total,
       uniqueOwnerIds: ownerIds,
       ownerNames: owners,
+      uniqueDealStages: uniqueStages,
+      stageLabels: Object.fromEntries(
+        uniqueStages.map((id) => [id, pipelineStages[id as string] ?? "unknown"])
+      ),
     });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
