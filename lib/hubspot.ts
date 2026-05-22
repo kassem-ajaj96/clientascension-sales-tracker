@@ -6,6 +6,7 @@ const AE_NAMES = ["Peter", "Logan", "Andrew", "Ciaran", "Fourkan"];
 // AIAA Pipeline stage IDs
 const SHOWED_STAGES = new Set([
   "1164856622",  // Holding Nurturing
+  "1164987316",  // Hot List
   "1164987317",  // Follow Up
   "1164987318",  // Closed Won
   "1164987319",  // Closed Lost
@@ -13,11 +14,12 @@ const SHOWED_STAGES = new Set([
 
 const OFFERED_STAGES = new Set([
   "1164856622",  // Holding Nurturing
+  "1164987316",  // Hot List
   "1164987317",  // Follow Up
   "1164987318",  // Closed Won
 ]);
 
-const MEETING_SCHEDULED = "1164856622";
+const MEETING_SCHEDULED = "1164987313";  // AIAA Pipeline → Meeting Scheduled
 const CLOSED_WON = "1164987318";
 const CLOSED_LOST = "1164987319";
 
