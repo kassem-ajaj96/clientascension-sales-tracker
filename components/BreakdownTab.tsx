@@ -1,5 +1,4 @@
 "use client";
-import { KPICard } from "./KPICard";
 
 interface PaymentPlanRow {
   plan: string;
@@ -27,12 +26,6 @@ export function BreakdownTab({ data, loading }: { data: BreakdownData | null; lo
   return (
     <div className="p-6">
       <div className="space-y-6 w-fit">
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 gap-4">
-          <KPICard label="Total Closes" value={data ? String(data.totalCloses) : "—"} color="gold" />
-          <KPICard label="Total Cash" value={data ? fmt$(data.totalCash) : "—"} color="green" />
-        </div>
-
         {/* 3 Tables side by side */}
         {loading && <div className="text-center text-gray-500 py-10 text-sm">Loading...</div>}
         {!loading && data && (
