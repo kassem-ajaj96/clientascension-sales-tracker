@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSheetRows } from "@/lib/sheets";
 
-const AE_NAMES = ["Peter", "Logan", "Andrew", "Ciaran", "Fourkan"];
+const AE_NAMES = ["Peter", "Logan", "Andrew", "Ciaran", "Fourkan", "Dan"];
 
 function toNum(val: string): number {
   const n = parseFloat((val || "").replace(/[^0-9.-]/g, ""));

@@ -42,8 +42,8 @@ export function BreakdownTab({ data, loading }: { data: BreakdownData | null; lo
                 <tbody>
                   {data.paymentPlans.map((row) => (
                     <tr key={row.plan} className="border-b border-[#111] hover:bg-[#111] transition-colors">
-                      <td className="px-4 py-3 text-white font-medium whitespace-nowrap">{row.plan}</td>
-                      <td className="px-4 py-3 text-right text-gray-300">{row.count}</td>
+                      <td className="px-4 py-3 text-white font-bold whitespace-nowrap">{row.plan}</td>
+                      <td className="px-4 py-3 text-right text-gray-300 font-bold">{row.count}</td>
                     </tr>
                   ))}
                   <tr className="bg-[#0a0a0a] border-t border-[#1e1e1e]">
@@ -66,8 +66,8 @@ export function BreakdownTab({ data, loading }: { data: BreakdownData | null; lo
                 <tbody>
                   {data.closeTypes.map((row) => (
                     <tr key={row.type} className="border-b border-[#111] hover:bg-[#111] transition-colors">
-                      <td className="px-4 py-3 text-white font-medium whitespace-nowrap">{row.type}</td>
-                      <td className="px-4 py-3 text-right text-gray-300">{row.count}</td>
+                      <td className="px-4 py-3 text-white font-bold whitespace-nowrap">{row.type}</td>
+                      <td className="px-4 py-3 text-right text-gray-300 font-bold">{row.count}</td>
                     </tr>
                   ))}
                   <tr className="bg-[#0a0a0a] border-t border-[#1e1e1e]">
@@ -90,8 +90,8 @@ export function BreakdownTab({ data, loading }: { data: BreakdownData | null; lo
                 <tbody>
                   {data.closeTypes.map((row) => (
                     <tr key={row.type} className="border-b border-[#111] hover:bg-[#111] transition-colors">
-                      <td className="px-4 py-3 text-white font-medium whitespace-nowrap">{row.type}</td>
-                      <td className="px-4 py-3 text-right text-green-400 font-medium">{fmt$(row.cash)}</td>
+                      <td className="px-4 py-3 text-white font-bold whitespace-nowrap">{row.type}</td>
+                      <td className="px-4 py-3 text-right text-green-400 font-bold">{fmt$(row.cash)}</td>
                     </tr>
                   ))}
                   <tr className="bg-[#0a0a0a] border-t border-[#1e1e1e]">
