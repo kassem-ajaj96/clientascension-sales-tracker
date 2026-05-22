@@ -47,14 +47,14 @@ export function Header({ from, to, onFromChange, onToChange, onApply }: HeaderPr
           type="date"
           value={from}
           onChange={(e) => onFromChange(e.target.value)}
-          className="bg-[#111] border border-[#2a2a2a] text-white text-sm rounded px-3 py-1.5 [color-scheme:dark]"
+          lang="en-US" className="bg-[#111] border border-[#2a2a2a] text-white text-sm rounded px-3 py-1.5 [color-scheme:dark]"
         />
         <span className="text-gray-500 text-xs uppercase tracking-wider">To</span>
         <input
           type="date"
           value={to}
           onChange={(e) => onToChange(e.target.value)}
-          className="bg-[#111] border border-[#2a2a2a] text-white text-sm rounded px-3 py-1.5 [color-scheme:dark]"
+          lang="en-US" className="bg-[#111] border border-[#2a2a2a] text-white text-sm rounded px-3 py-1.5 [color-scheme:dark]"
         />
         <button
           onClick={onApply}
