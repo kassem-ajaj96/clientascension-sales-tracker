@@ -94,11 +94,11 @@ export function SDRAETab({
               {data?.reps.map((rep) => (
                 <tr key={rep.name} className="border-b border-[#111] hover:bg-[#111] transition-colors">
                   <td className="px-4 py-3 font-medium text-white">{rep.name}</td>
-                  <td className="px-4 py-3 text-right text-gray-300">{rep.scheduled || "—"}</td>
-                  <td className="px-4 py-3 text-right text-gray-300">{rep.meetingScheduled || "—"}</td>
-                  <td className="px-4 py-3 text-right text-gray-300">{rep.showed || "—"}</td>
-                  <td className="px-4 py-3 text-right text-gray-300">{rep.offered || "—"}</td>
-                  <td className="px-4 py-3 text-right text-gray-300">{rep.closes || "—"}</td>
+                  <td className="px-4 py-3 text-right text-gray-300">{rep.scheduled}</td>
+                  <td className="px-4 py-3 text-right text-gray-300">{rep.meetingScheduled}</td>
+                  <td className="px-4 py-3 text-right text-gray-300">{rep.showed}</td>
+                  <td className="px-4 py-3 text-right text-gray-300">{rep.offered}</td>
+                  <td className="px-4 py-3 text-right text-gray-300">{rep.closes}</td>
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.showRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.offerRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.closeRate} /></td>

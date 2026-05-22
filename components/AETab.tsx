@@ -71,10 +71,10 @@ export function AETab({ data, loading }: { data: AEData | null; loading: boolean
               {data?.reps.map((rep) => (
                 <tr key={rep.name} className="border-b border-[#111] hover:bg-[#111] transition-colors">
                   <td className="px-4 py-3 font-medium text-white">{rep.name}</td>
-                  <td className="px-4 py-3 text-right text-gray-300">{rep.scheduled || "—"}</td>
-                  <td className="px-4 py-3 text-right text-gray-300">{rep.liveCalls || "—"}</td>
-                  <td className="px-4 py-3 text-right text-gray-300">{rep.offers || "—"}</td>
-                  <td className="px-4 py-3 text-right text-gray-300">{rep.closes || "—"}</td>
+                  <td className="px-4 py-3 text-right text-gray-300">{rep.scheduled}</td>
+                  <td className="px-4 py-3 text-right text-gray-300">{rep.liveCalls}</td>
+                  <td className="px-4 py-3 text-right text-gray-300">{rep.offers}</td>
+                  <td className="px-4 py-3 text-right text-gray-300">{rep.closes}</td>
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.showRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.offerRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.closeRate} /></td>
