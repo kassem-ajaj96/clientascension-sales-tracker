@@ -47,7 +47,7 @@ function Row({ label, value, valueClass = "text-white" }: { label: string; value
 function TotalRow({ label, value, valueClass = "text-white" }: { label: string; value: string | number; valueClass?: string }) {
   return (
     <div className="flex items-center justify-between px-5 py-3 bg-[#0a0a0a]">
-      <span className="text-xs font-bold uppercase tracking-widest text-gray-500">{label}</span>
+      <span className="text-sm font-bold text-white">{label}</span>
       <span className={`text-sm font-bold ${valueClass}`}>{value}</span>
     </div>
   );
