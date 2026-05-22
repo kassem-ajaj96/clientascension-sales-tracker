@@ -1,4 +1,4 @@
-type Tab = "ae" | "sdr" | "sdr-ae";
+type Tab = "ae" | "sdr" | "sdr-ae" | "breakdown";
 
 interface TabNavProps {
   active: Tab;
@@ -9,6 +9,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "ae", label: "Closer" },
   { id: "sdr", label: "Setter" },
   { id: "sdr-ae", label: "Setter → Closer" },
+  { id: "breakdown", label: "Breakdown" },
 ];
 
 export function TabNav({ active, onChange }: TabNavProps) {

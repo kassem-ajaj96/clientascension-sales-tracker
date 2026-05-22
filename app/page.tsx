@@ -5,8 +5,9 @@ import { TabNav } from "@/components/TabNav";
 import { AETab } from "@/components/AETab";
 import { SDRTab } from "@/components/SDRTab";
 import { SDRAETab } from "@/components/SDRAETab";
+import { BreakdownTab } from "@/components/BreakdownTab";
 
-type Tab = "ae" | "sdr" | "sdr-ae";
+type Tab = "ae" | "sdr" | "sdr-ae" | "breakdown";
 
 function defaultFrom() {
   const d = new Date();
@@ -27,9 +28,11 @@ export default function DashboardPage() {
   const [aeData, setAEData] = useState(null);
   const [sdrData, setSDRData] = useState(null);
   const [hsData, setHSData] = useState(null);
+  const [bdData, setBDData] = useState(null);
   const [aeLoading, setAELoading] = useState(false);
   const [sdrLoading, setSDRLoading] = useState(false);
   const [hsLoading, setHSLoading] = useState(false);
+  const [bdLoading, setBDLoading] = useState(false);
 
   const fetchAE = useCallback(async (f: string, t: string) => {
     setAELoading(true);
@@ -64,11 +67,22 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchBD = useCallback(async (f: string, t: string) => {
+    setBDLoading(true);
+    try {
+      const res = await fetch(`/api/breakdown?from=${f}&to=${t}`);
+      if (res.ok) setBDData(await res.json());
+    } finally {
+      setBDLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchAE(from, to);
     fetchSDR(from, to);
     fetchHS(from, to);
-  }, [from, to, fetchAE, fetchSDR, fetchHS]);
+    fetchBD(from, to);
+  }, [from, to, fetchAE, fetchSDR, fetchHS, fetchBD]);
 
   function handleApply() {
     setFrom(pendingFrom);
@@ -94,6 +108,7 @@ export default function DashboardPage() {
           onSetterChange={(setter) => fetchHS(from, to, setter)}
         />
       )}
+      {tab === "breakdown" && <BreakdownTab data={bdData} loading={bdLoading} />}
     </div>
   );
 }
