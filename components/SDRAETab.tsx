@@ -55,7 +55,7 @@ export function SDRAETab({
               <button
                 key={s}
                 onClick={() => handleSetter(s)}
-                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                className={`px-3 py-1 rounded text-xs font-bold transition-colors ${
                   activeSetter === s
                     ? "bg-[#e53e1e] text-white"
                     : "bg-[#111] text-gray-500 hover:text-gray-200 border border-[#2a2a2a]"
@@ -79,21 +79,21 @@ export function SDRAETab({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#1e1e1e] text-gray-500 text-xs uppercase tracking-wide">
-                <th className="text-left px-4 py-3 font-medium">Rep</th>
-                <th className="text-right px-4 py-3 font-medium">Calls</th>
-                <th className="text-right px-4 py-3 font-medium">Meeting Sched</th>
-                <th className="text-right px-4 py-3 font-medium">Showed</th>
-                <th className="text-right px-4 py-3 font-medium">Offered</th>
-                <th className="text-right px-4 py-3 font-medium">Closes</th>
-                <th className="text-center px-4 py-3 font-medium">Show%</th>
-                <th className="text-center px-4 py-3 font-medium">Offer%</th>
-                <th className="text-center px-4 py-3 font-medium">Close%</th>
+                <th className="text-left px-4 py-3 font-bold">Rep</th>
+                <th className="text-right px-4 py-3 font-bold">Calls</th>
+                <th className="text-right px-4 py-3 font-bold">Meeting Sched</th>
+                <th className="text-right px-4 py-3 font-bold">Showed</th>
+                <th className="text-right px-4 py-3 font-bold">Offered</th>
+                <th className="text-right px-4 py-3 font-bold">Closes</th>
+                <th className="text-center px-4 py-3 font-bold">Show%</th>
+                <th className="text-center px-4 py-3 font-bold">Offer%</th>
+                <th className="text-center px-4 py-3 font-bold">Close%</th>
               </tr>
             </thead>
             <tbody>
               {data?.reps.map((rep) => (
                 <tr key={rep.name} className="border-b border-[#111] hover:bg-[#111] transition-colors">
-                  <td className="px-4 py-3 font-medium text-white">{rep.name}</td>
+                  <td className="px-4 py-3 font-bold text-white">{rep.name}</td>
                   <td className="px-4 py-3 text-right text-gray-300">{rep.scheduled}</td>
                   <td className="px-4 py-3 text-right text-gray-300">{rep.meetingScheduled}</td>
                   <td className="px-4 py-3 text-right text-gray-300">{rep.showed}</td>
@@ -106,12 +106,12 @@ export function SDRAETab({
               ))}
               {t && (
                 <tr className="bg-[#0a0a0a] border-t border-[#1e1e1e]">
-                  <td className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Team Total</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">{t.scheduled}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">{t.meetingScheduled}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">{t.showed}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">{t.offered}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">{t.closes}</td>
+                  <td className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Team Total</td>
+                  <td className="px-4 py-3 text-right font-bold text-white">{t.scheduled}</td>
+                  <td className="px-4 py-3 text-right font-bold text-white">{t.meetingScheduled}</td>
+                  <td className="px-4 py-3 text-right font-bold text-white">{t.showed}</td>
+                  <td className="px-4 py-3 text-right font-bold text-white">{t.offered}</td>
+                  <td className="px-4 py-3 text-right font-bold text-white">{t.closes}</td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.showRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.offerRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.closeRate} /></td>

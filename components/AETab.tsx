@@ -55,22 +55,22 @@ export function AETab({ data, loading }: { data: AEData | null; loading: boolean
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#1e1e1e] text-gray-500 text-xs uppercase tracking-wide">
-                <th className="text-left px-4 py-3 font-medium">Rep</th>
-                <th className="text-right px-4 py-3 font-medium">Scheduled</th>
-                <th className="text-right px-4 py-3 font-medium">Live Calls</th>
-                <th className="text-right px-4 py-3 font-medium">Offers</th>
-                <th className="text-right px-4 py-3 font-medium">Closes</th>
-                <th className="text-center px-4 py-3 font-medium">Show%</th>
-                <th className="text-center px-4 py-3 font-medium">Offer%</th>
-                <th className="text-center px-4 py-3 font-medium">Close%</th>
-                <th className="text-right px-4 py-3 font-medium">Cash Collected</th>
-                <th className="text-right px-4 py-3 font-medium">Cash/Call</th>
+                <th className="text-left px-4 py-3 font-bold">Rep</th>
+                <th className="text-right px-4 py-3 font-bold">Scheduled</th>
+                <th className="text-right px-4 py-3 font-bold">Live Calls</th>
+                <th className="text-right px-4 py-3 font-bold">Offers</th>
+                <th className="text-right px-4 py-3 font-bold">Closes</th>
+                <th className="text-center px-4 py-3 font-bold">Show%</th>
+                <th className="text-center px-4 py-3 font-bold">Offer%</th>
+                <th className="text-center px-4 py-3 font-bold">Close%</th>
+                <th className="text-right px-4 py-3 font-bold">Cash Collected</th>
+                <th className="text-right px-4 py-3 font-bold">Cash/Call</th>
               </tr>
             </thead>
             <tbody>
               {data?.reps.map((rep) => (
                 <tr key={rep.name} className="border-b border-[#111] hover:bg-[#111] transition-colors">
-                  <td className="px-4 py-3 font-medium text-white">{rep.name}</td>
+                  <td className="px-4 py-3 font-bold text-white">{rep.name}</td>
                   <td className="px-4 py-3 text-right text-gray-300">{rep.scheduled}</td>
                   <td className="px-4 py-3 text-right text-gray-300">{rep.liveCalls}</td>
                   <td className="px-4 py-3 text-right text-gray-300">{rep.offers}</td>
@@ -78,26 +78,26 @@ export function AETab({ data, loading }: { data: AEData | null; loading: boolean
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.showRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.offerRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={rep.closeRate} /></td>
-                  <td className="px-4 py-3 text-right text-green-400 font-medium">
+                  <td className="px-4 py-3 text-right text-green-400 font-bold">
                     {rep.cashCollected > 0 ? fmt$(rep.cashCollected) : "—"}
                   </td>
-                  <td className="px-4 py-3 text-right text-green-400 font-medium">
+                  <td className="px-4 py-3 text-right text-green-400 font-bold">
                     {rep.cashPerCall !== null ? fmt$(rep.cashPerCall) : "—"}
                   </td>
                 </tr>
               ))}
               {t && (
                 <tr className="bg-[#0a0a0a] border-t border-[#1e1e1e]">
-                  <td className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Team Total</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">{t.scheduled}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">{t.liveCalls}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">{t.offers}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">{t.closes}</td>
+                  <td className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Team Total</td>
+                  <td className="px-4 py-3 text-right font-bold text-white">{t.scheduled}</td>
+                  <td className="px-4 py-3 text-right font-bold text-white">{t.liveCalls}</td>
+                  <td className="px-4 py-3 text-right font-bold text-white">{t.offers}</td>
+                  <td className="px-4 py-3 text-right font-bold text-white">{t.closes}</td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.showRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.offerRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.closeRate} /></td>
-                  <td className="px-4 py-3 text-right font-semibold text-green-400">{fmt$(t.cashCollected)}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-green-400">
+                  <td className="px-4 py-3 text-right font-bold text-green-400">{fmt$(t.cashCollected)}</td>
+                  <td className="px-4 py-3 text-right font-bold text-green-400">
                     {t.cashPerCall !== null ? fmt$(t.cashPerCall) : "—"}
                   </td>
                 </tr>

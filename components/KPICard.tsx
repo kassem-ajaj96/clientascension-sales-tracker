@@ -18,7 +18,7 @@ const colorMap: Record<Color, string> = {
 export function KPICard({ label, value, color = "white" }: KPICardProps) {
   return (
     <div className="bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg p-5 flex flex-col gap-2">
-      <span className="text-gray-500 text-xs uppercase tracking-wider">{label}</span>
+      <span className="text-gray-500 text-xs uppercase tracking-wider font-bold">{label}</span>
       <span className={`text-3xl font-bold ${colorMap[color]}`}>{value}</span>
     </div>
   );

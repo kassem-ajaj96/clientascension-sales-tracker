@@ -42,21 +42,21 @@ export function SDRTab({ data, loading }: { data: SDRData | null; loading: boole
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#1e1e1e] text-gray-500 text-xs uppercase tracking-wide">
-                <th className="text-left px-4 py-3 font-medium">Rep</th>
-                <th className="text-right px-4 py-3 font-medium">Dials</th>
-                <th className="text-right px-4 py-3 font-medium">Connects</th>
-                <th className="text-right px-4 py-3 font-medium">Convo</th>
-                <th className="text-right px-4 py-3 font-medium">Booked</th>
-                <th className="text-center px-4 py-3 font-medium">Connection%</th>
-                <th className="text-center px-4 py-3 font-medium">Connect→Convo%</th>
-                <th className="text-center px-4 py-3 font-medium">Convo→Book%</th>
-                <th className="text-center px-4 py-3 font-medium">Dial→Book%</th>
+                <th className="text-left px-4 py-3 font-bold">Rep</th>
+                <th className="text-right px-4 py-3 font-bold">Dials</th>
+                <th className="text-right px-4 py-3 font-bold">Connects</th>
+                <th className="text-right px-4 py-3 font-bold">Convo</th>
+                <th className="text-right px-4 py-3 font-bold">Booked</th>
+                <th className="text-center px-4 py-3 font-bold">Connection%</th>
+                <th className="text-center px-4 py-3 font-bold">Connect→Convo%</th>
+                <th className="text-center px-4 py-3 font-bold">Convo→Book%</th>
+                <th className="text-center px-4 py-3 font-bold">Dial→Book%</th>
               </tr>
             </thead>
             <tbody>
               {data?.reps.map((rep) => (
                 <tr key={rep.name} className="border-b border-[#111] hover:bg-[#111] transition-colors">
-                  <td className="px-4 py-3 font-medium text-white">{rep.name}</td>
+                  <td className="px-4 py-3 font-bold text-white">{rep.name}</td>
                   <td className="px-4 py-3 text-right text-gray-300">{rep.dials}</td>
                   <td className="px-4 py-3 text-right text-gray-300">{rep.connects}</td>
                   <td className="px-4 py-3 text-right text-gray-300">{rep.convo}</td>
@@ -71,11 +71,11 @@ export function SDRTab({ data, loading }: { data: SDRData | null; loading: boole
               {/* Team Total */}
               {t && (
                 <tr className="bg-[#0a0a0a] border-t border-[#1e1e1e]">
-                  <td className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Team Total</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">{t.dials}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">{t.connects}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">{t.convo}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">{t.meetingsBooked}</td>
+                  <td className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wide">Team Total</td>
+                  <td className="px-4 py-3 text-right font-bold text-white">{t.dials}</td>
+                  <td className="px-4 py-3 text-right font-bold text-white">{t.connects}</td>
+                  <td className="px-4 py-3 text-right font-bold text-white">{t.convo}</td>
+                  <td className="px-4 py-3 text-right font-bold text-white">{t.meetingsBooked}</td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.connectionRate} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.connectToConvo} /></td>
                   <td className="px-4 py-3 text-center"><PctBadge value={t.convoToBooking} /></td>

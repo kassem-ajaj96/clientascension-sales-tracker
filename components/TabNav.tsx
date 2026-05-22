@@ -19,7 +19,7 @@ export function TabNav({ active, onChange }: TabNavProps) {
         <button
           key={id}
           onClick={() => onChange(id)}
-          className={`py-4 px-4 text-sm font-medium mr-1 border-b-2 transition-colors ${
+          className={`py-4 px-4 text-sm font-bold mr-1 border-b-2 transition-colors ${
             active === id
               ? "border-[#e53e1e] text-white"
               : "border-transparent text-gray-500 hover:text-gray-300"
