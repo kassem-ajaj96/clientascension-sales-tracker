@@ -62,9 +62,11 @@ export function Header({ from, to, onFromChange, onToChange, onApply }: HeaderPr
         >
           Apply
         </button>
-        {session?.user?.email && (
+        {session && (
           <>
-            <span className="text-gray-600 text-sm ml-2">{session.user.email}</span>
+            {session.user?.email && (
+              <span className="text-gray-600 text-sm ml-2">{session.user.email}</span>
+            )}
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
               className="text-gray-500 hover:text-white text-sm transition-colors"
