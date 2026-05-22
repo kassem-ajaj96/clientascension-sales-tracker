@@ -104,6 +104,7 @@ export async function GET() {
       stageLabels: Object.fromEntries(
         uniqueStages.map((id) => [id, pipelineStages[id as string] ?? "unknown"])
       ),
+      allPipelineStages: pipelineStages,
     });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
