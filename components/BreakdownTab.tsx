@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 
 interface PaymentPlanRow {
   plan: string;
@@ -59,7 +60,7 @@ export function BreakdownTab({ data, loading }: { data: BreakdownData | null; lo
       <div className="w-fit space-y-6">
         {loading && <div className="text-center text-gray-500 py-10 text-sm">Loading...</div>}
         {!loading && data && (
-          <div className="flex gap-5 items-start">
+          <div className="flex flex-col gap-5">
             <Card title="Payment Plan">
               {data.paymentPlans.map((row) => (
                 <Row key={row.plan} label={row.plan} value={row.count} />
