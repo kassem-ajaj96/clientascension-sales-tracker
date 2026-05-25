@@ -28,6 +28,25 @@ interface MonthlyData {
 const AES = ["All Team", "Peter", "Logan", "Andrew", "Ciaran", "Fourkan"] as const;
 type AEName = (typeof AES)[number];
 
+function currentYearMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function getRecentMonths(count: number): { value: string; label: string }[] {
+  const months = [];
+  const now = new Date();
+  for (let i = 0; i < count; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleString("en-US", { month: "short", year: "numeric" });
+    months.push({ value, label });
+  }
+  return months;
+}
+
+const RECENT_MONTHS = getRecentMonths(6);
+
 function fmt$(n: number) {
   return n.toLocaleString("en-US", {
     style: "currency",
@@ -131,11 +150,19 @@ function buildRows(curr: Omit<RepStats, "name">, prev: Omit<RepStats, "name">): 
 export function MonthlyPerformanceTab({
   data,
   loading,
+  onMonthChange,
 }: {
   data: MonthlyData | null;
   loading: boolean;
+  onMonthChange: (month: string) => void;
 }) {
   const [activeRep, setActiveRep] = useState<AEName>("All Team");
+  const [selectedMonth, setSelectedMonth] = useState(currentYearMonth);
+
+  function handleMonthClick(month: string) {
+    setSelectedMonth(month);
+    onMonthChange(month);
+  }
 
   const rows =
     data
@@ -158,6 +185,23 @@ export function MonthlyPerformanceTab({
               }`}
             >
               {rep}
+            </button>
+          ))}
+        </div>
+
+        {/* Month selector */}
+        <div className="flex gap-2 flex-wrap">
+          {RECENT_MONTHS.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => handleMonthClick(value)}
+              className={`px-4 py-1.5 rounded text-sm font-bold transition-colors ${
+                selectedMonth === value
+                  ? "bg-white text-black"
+                  : "bg-[#111] text-gray-500 hover:text-gray-200 border border-[#2a2a2a]"
+              }`}
+            >
+              {label}
             </button>
           ))}
         </div>

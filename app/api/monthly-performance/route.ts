@@ -1,25 +1,33 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSheetRows } from "@/lib/sheets";
 
 const AE_NAMES = ["Peter", "Logan", "Andrew", "Ciaran", "Fourkan"];
 
-function getMonthRange(monthsAgo: number) {
+function toNum(val: string): number {
+  const n = parseFloat((val || "").replace(/[^0-9.-]/g, ""));
+  return isNaN(n) ? 0 : n;
+}
+
+function currentYearMonth(): string {
   const now = new Date();
-  const d = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1);
-  const year = d.getFullYear();
-  const month = d.getMonth() + 1;
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function getMonthRange(yearMonth: string) {
+  const [year, month] = yearMonth.split("-").map(Number);
   const lastDay = new Date(year, month, 0).getDate();
   const pad = (n: number) => String(n).padStart(2, "0");
   return {
     from: `${year}-${pad(month)}-01`,
     to: `${year}-${pad(month)}-${pad(lastDay)}`,
-    label: d.toLocaleString("en-US", { month: "long", year: "numeric" }),
+    label: new Date(year, month - 1, 1).toLocaleString("en-US", { month: "long", year: "numeric" }),
   };
 }
 
-function toNum(val: string): number {
-  const n = parseFloat((val || "").replace(/[^0-9.-]/g, ""));
-  return isNaN(n) ? 0 : n;
+function prevYearMonth(yearMonth: string): string {
+  const [year, month] = yearMonth.split("-").map(Number);
+  const d = new Date(year, month - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
 async function getMonthData(from: string, to: string, label: string) {
@@ -88,13 +96,17 @@ async function getMonthData(from: string, to: string, label: string) {
   };
 }
 
-export async function GET() {
-  const thisMonth = getMonthRange(0);
-  const lastMonth = getMonthRange(1);
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const month = searchParams.get("month") || currentYearMonth();
+  const prev = prevYearMonth(month);
+
+  const thisRange = getMonthRange(month);
+  const prevRange = getMonthRange(prev);
 
   const [current, previous] = await Promise.all([
-    getMonthData(thisMonth.from, thisMonth.to, thisMonth.label),
-    getMonthData(lastMonth.from, lastMonth.to, lastMonth.label),
+    getMonthData(thisRange.from, thisRange.to, thisRange.label),
+    getMonthData(prevRange.from, prevRange.to, prevRange.label),
   ]);
 
   return NextResponse.json({ current, previous });

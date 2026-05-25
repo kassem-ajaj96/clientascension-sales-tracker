@@ -80,10 +80,11 @@ export default function DashboardPage() {
     }
   }, []);
 
-  const fetchMonthly = useCallback(async () => {
+  const fetchMonthly = useCallback(async (month?: string) => {
     setMonthlyLoading(true);
     try {
-      const res = await fetch("/api/monthly-performance");
+      const url = month ? `/api/monthly-performance?month=${month}` : "/api/monthly-performance";
+      const res = await fetch(url);
       if (res.ok) setMonthlyData(await res.json());
     } finally {
       setMonthlyLoading(false);
@@ -123,7 +124,7 @@ export default function DashboardPage() {
         />
       )}
       {tab === "breakdown" && <BreakdownTab data={bdData} loading={bdLoading} />}
-      {tab === "monthly" && <MonthlyPerformanceTab data={monthlyData} loading={monthlyLoading} />}
+      {tab === "monthly" && <MonthlyPerformanceTab data={monthlyData} loading={monthlyLoading} onMonthChange={(m) => fetchMonthly(m)} />}
     </div>
   );
 }
