@@ -1,0 +1,219 @@
+"use client";
+import React, { useState } from "react";
+
+interface RepStats {
+  name: string;
+  scheduled: number;
+  showed: number;
+  offered: number;
+  closes: number;
+  cashCollected: number;
+  cashPerCall: number | null;
+  showRate: number | null;
+  offerRate: number | null;
+  closeRate: number | null;
+}
+
+interface MonthSnapshot {
+  reps: RepStats[];
+  totals: Omit<RepStats, "name">;
+  label: string;
+}
+
+interface MonthlyData {
+  current: MonthSnapshot;
+  previous: MonthSnapshot;
+}
+
+const AES = ["All Team", "Peter", "Logan", "Andrew", "Ciaran", "Fourkan"] as const;
+type AEName = (typeof AES)[number];
+
+function fmt$(n: number) {
+  return n.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
+}
+
+function fmtPct(v: number | null) {
+  if (v === null) return "—";
+  return `${(v * 100).toFixed(1)}%`;
+}
+
+function getStats(snapshot: MonthSnapshot, name: AEName): Omit<RepStats, "name"> {
+  if (name === "All Team") return snapshot.totals;
+  return (
+    snapshot.reps.find((r) => r.name === name) ?? {
+      scheduled: 0,
+      showed: 0,
+      offered: 0,
+      closes: 0,
+      cashCollected: 0,
+      cashPerCall: null,
+      showRate: null,
+      offerRate: null,
+      closeRate: null,
+    }
+  );
+}
+
+interface MetricRow {
+  label: string;
+  currDisplay: string;
+  prevDisplay: string;
+  diff: number | null;
+  diffDisplay: string | null;
+}
+
+function buildRows(curr: Omit<RepStats, "name">, prev: Omit<RepStats, "name">): MetricRow[] {
+  function numRow(label: string, c: number, p: number): MetricRow {
+    const diff = c - p;
+    return {
+      label,
+      currDisplay: String(c),
+      prevDisplay: String(p),
+      diff,
+      diffDisplay: diff !== 0 ? `${diff > 0 ? "+" : ""}${diff}` : null,
+    };
+  }
+
+  function cashRow(label: string, c: number, p: number): MetricRow {
+    const diff = c - p;
+    return {
+      label,
+      currDisplay: fmt$(c),
+      prevDisplay: fmt$(p),
+      diff,
+      diffDisplay: diff !== 0 ? `${diff > 0 ? "+" : ""}${fmt$(diff)}` : null,
+    };
+  }
+
+  function cashNullRow(label: string, c: number | null, p: number | null): MetricRow {
+    const diff = c !== null && p !== null ? c - p : null;
+    return {
+      label,
+      currDisplay: c !== null ? fmt$(c) : "—",
+      prevDisplay: p !== null ? fmt$(p) : "—",
+      diff,
+      diffDisplay: diff !== null && diff !== 0 ? `${diff > 0 ? "+" : ""}${fmt$(diff)}` : null,
+    };
+  }
+
+  function pctRow(label: string, c: number | null, p: number | null): MetricRow {
+    const diff = c !== null && p !== null ? c - p : null;
+    return {
+      label,
+      currDisplay: fmtPct(c),
+      prevDisplay: fmtPct(p),
+      diff,
+      diffDisplay:
+        diff !== null && diff !== 0
+          ? `${diff > 0 ? "+" : ""}${(diff * 100).toFixed(1)}pp`
+          : null,
+    };
+  }
+
+  return [
+    numRow("Calls", curr.scheduled, prev.scheduled),
+    numRow("Shows", curr.showed, prev.showed),
+    numRow("Offers", curr.offered, prev.offered),
+    numRow("Closes", curr.closes, prev.closes),
+    cashRow("Cash Collected", curr.cashCollected, prev.cashCollected),
+    cashNullRow("Cash / Call", curr.cashPerCall, prev.cashPerCall),
+    pctRow("Show Rate", curr.showRate, prev.showRate),
+    pctRow("Offer Rate", curr.offerRate, prev.offerRate),
+    pctRow("Close Rate", curr.closeRate, prev.closeRate),
+  ];
+}
+
+export function MonthlyPerformanceTab({
+  data,
+  loading,
+}: {
+  data: MonthlyData | null;
+  loading: boolean;
+}) {
+  const [activeRep, setActiveRep] = useState<AEName>("All Team");
+
+  const rows =
+    data
+      ? buildRows(getStats(data.current, activeRep), getStats(data.previous, activeRep))
+      : [];
+
+  return (
+    <div className="p-6">
+      <div className="space-y-5 w-fit">
+        {/* Rep selector */}
+        <div className="flex gap-2 flex-wrap">
+          {AES.map((rep) => (
+            <button
+              key={rep}
+              onClick={() => setActiveRep(rep)}
+              className={`px-4 py-1.5 rounded text-sm font-bold transition-colors ${
+                activeRep === rep
+                  ? "bg-[#e53e1e] text-white"
+                  : "bg-[#111] text-gray-500 hover:text-gray-200 border border-[#2a2a2a]"
+              }`}
+            >
+              {rep}
+            </button>
+          ))}
+        </div>
+
+        {loading && (
+          <div className="text-center text-gray-500 py-10 text-sm">Loading...</div>
+        )}
+
+        {!loading && data && (
+          <div className="bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#1e1e1e] text-gray-500 text-xs uppercase tracking-wide">
+                  <th className="text-left px-5 py-3 font-bold">Metric</th>
+                  <th className="text-right px-5 py-3 font-bold text-white">
+                    {data.current.label}
+                  </th>
+                  <th className="text-right px-5 py-3 font-bold">
+                    {data.previous.label}
+                  </th>
+                  <th className="text-center px-5 py-3 font-bold">Growth</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, i) => (
+                  <tr
+                    key={row.label}
+                    className={`border-b border-[#111] hover:bg-[#111] transition-colors ${
+                      i === rows.length - 1 ? "border-b-0" : ""
+                    }`}
+                  >
+                    <td className="px-5 py-3 font-bold text-gray-400">{row.label}</td>
+                    <td className="px-5 py-3 text-right font-bold text-white">
+                      {row.currDisplay}
+                    </td>
+                    <td className="px-5 py-3 text-right font-bold text-gray-500">
+                      {row.prevDisplay}
+                    </td>
+                    <td
+                      className={`px-5 py-3 text-center font-bold ${
+                        row.diff === null || row.diff === 0
+                          ? "text-gray-600"
+                          : row.diff > 0
+                          ? "text-green-400"
+                          : "text-red-400"
+                      }`}
+                    >
+                      {row.diffDisplay ?? "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

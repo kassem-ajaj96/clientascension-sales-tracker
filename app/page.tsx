@@ -6,8 +6,9 @@ import { AETab } from "@/components/AETab";
 import { SDRTab } from "@/components/SDRTab";
 import { SDRAETab } from "@/components/SDRAETab";
 import { BreakdownTab } from "@/components/BreakdownTab";
+import { MonthlyPerformanceTab } from "@/components/MonthlyPerformanceTab";
 
-type Tab = "ae" | "sdr" | "sdr-ae" | "breakdown";
+type Tab = "ae" | "sdr" | "sdr-ae" | "breakdown" | "monthly";
 
 function defaultFrom() {
   const d = new Date();
@@ -29,10 +30,12 @@ export default function DashboardPage() {
   const [sdrData, setSDRData] = useState(null);
   const [hsData, setHSData] = useState(null);
   const [bdData, setBDData] = useState(null);
+  const [monthlyData, setMonthlyData] = useState(null);
   const [aeLoading, setAELoading] = useState(false);
   const [sdrLoading, setSDRLoading] = useState(false);
   const [hsLoading, setHSLoading] = useState(false);
   const [bdLoading, setBDLoading] = useState(false);
+  const [monthlyLoading, setMonthlyLoading] = useState(false);
 
   const fetchAE = useCallback(async (f: string, t: string) => {
     setAELoading(true);
@@ -77,12 +80,23 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchMonthly = useCallback(async () => {
+    setMonthlyLoading(true);
+    try {
+      const res = await fetch("/api/monthly-performance");
+      if (res.ok) setMonthlyData(await res.json());
+    } finally {
+      setMonthlyLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchAE(from, to);
     fetchSDR(from, to);
     fetchHS(from, to);
     fetchBD(from, to);
-  }, [from, to, fetchAE, fetchSDR, fetchHS, fetchBD]);
+    fetchMonthly();
+  }, [from, to, fetchAE, fetchSDR, fetchHS, fetchBD, fetchMonthly]);
 
   function handleApply() {
     setFrom(pendingFrom);
@@ -109,6 +123,7 @@ export default function DashboardPage() {
         />
       )}
       {tab === "breakdown" && <BreakdownTab data={bdData} loading={bdLoading} />}
+      {tab === "monthly" && <MonthlyPerformanceTab data={monthlyData} loading={monthlyLoading} />}
     </div>
   );
 }
