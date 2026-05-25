@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { getHubSpotAEData } from "@/lib/hubspot";
 import { getSheetRows } from "@/lib/sheets";
+
+const AE_NAMES = ["Peter", "Logan", "Andrew", "Ciaran", "Fourkan"];
 
 function getMonthRange(monthsAgo: number) {
   const now = new Date();
@@ -21,39 +22,69 @@ function toNum(val: string): number {
   return isNaN(n) ? 0 : n;
 }
 
-async function getCashByRep(from: string, to: string): Promise<Record<string, number>> {
-  const rows = await getSheetRows("closes", "Date of close", from, to);
-  const cash: Record<string, number> = {};
-  for (const row of rows) {
-    const closer = row["Closer"]?.trim();
-    const amount = toNum(row["Upfront Cash"]);
-    if (closer) cash[closer] = (cash[closer] || 0) + amount;
-  }
-  return cash;
-}
+async function getMonthData(from: string, to: string, label: string) {
+  const [aeRows, closesRows] = await Promise.all([
+    getSheetRows("ae database", "Date", from, to),
+    getSheetRows("closes", "Date of close", from, to),
+  ]);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mergeCash(hsData: any, cashByRep: Record<string, number>) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const reps = hsData.reps.map((rep: any) => {
-    const cash = cashByRep[rep.name] ?? 0;
+  const byCloser: Record<string, { scheduled: number; showed: number; offered: number; closes: number; cash: number }> = {};
+  for (const name of AE_NAMES) {
+    byCloser[name] = { scheduled: 0, showed: 0, offered: 0, closes: 0, cash: 0 };
+  }
+
+  for (const row of aeRows) {
+    const name = row["Closer"]?.trim();
+    if (!name || !byCloser[name]) continue;
+    byCloser[name].scheduled += toNum(row["Scheduled calls"]);
+    byCloser[name].showed += toNum(row["Live calls"]);
+    byCloser[name].offered += toNum(row["Offers"]);
+  }
+
+  for (const row of closesRows) {
+    const name = row["Closer"]?.trim();
+    if (!name || !byCloser[name]) continue;
+    byCloser[name].closes += 1;
+    byCloser[name].cash += toNum(row["Upfront Cash"]);
+  }
+
+  const reps = AE_NAMES.map((name) => {
+    const s = byCloser[name];
     return {
-      ...rep,
-      cashCollected: cash,
-      cashPerCall: rep.scheduled > 0 ? cash / rep.scheduled : null,
+      name,
+      scheduled: s.scheduled,
+      showed: s.showed,
+      offered: s.offered,
+      closes: s.closes,
+      cashCollected: s.cash,
+      showRate: s.scheduled > 0 ? s.showed / s.scheduled : null,
+      offerRate: s.showed > 0 ? s.offered / s.showed : null,
+      closeRate: s.showed > 0 ? s.closes / s.showed : null,
+      cashPerCall: s.scheduled > 0 ? s.cash / s.scheduled : null,
     };
   });
 
-  const totalCash = reps.reduce((sum: number, r: { cashCollected: number }) => sum + r.cashCollected, 0);
-  const totalScheduled = hsData.totals.scheduled;
+  const raw = reps.reduce(
+    (acc, r) => ({
+      scheduled: acc.scheduled + r.scheduled,
+      showed: acc.showed + r.showed,
+      offered: acc.offered + r.offered,
+      closes: acc.closes + r.closes,
+      cashCollected: acc.cashCollected + r.cashCollected,
+    }),
+    { scheduled: 0, showed: 0, offered: 0, closes: 0, cashCollected: 0 }
+  );
 
   return {
     reps,
     totals: {
-      ...hsData.totals,
-      cashCollected: totalCash,
-      cashPerCall: totalScheduled > 0 ? totalCash / totalScheduled : null,
+      ...raw,
+      showRate: raw.scheduled > 0 ? raw.showed / raw.scheduled : null,
+      offerRate: raw.showed > 0 ? raw.offered / raw.showed : null,
+      closeRate: raw.showed > 0 ? raw.closes / raw.showed : null,
+      cashPerCall: raw.scheduled > 0 ? raw.cashCollected / raw.scheduled : null,
     },
+    label,
   };
 }
 
@@ -61,15 +92,10 @@ export async function GET() {
   const thisMonth = getMonthRange(0);
   const lastMonth = getMonthRange(1);
 
-  const [hsThis, hsLast, cashThis, cashLast] = await Promise.all([
-    getHubSpotAEData(thisMonth.from, thisMonth.to),
-    getHubSpotAEData(lastMonth.from, lastMonth.to),
-    getCashByRep(thisMonth.from, thisMonth.to),
-    getCashByRep(lastMonth.from, lastMonth.to),
+  const [current, previous] = await Promise.all([
+    getMonthData(thisMonth.from, thisMonth.to, thisMonth.label),
+    getMonthData(lastMonth.from, lastMonth.to, lastMonth.label),
   ]);
 
-  return NextResponse.json({
-    current: { ...mergeCash(hsThis, cashThis), label: thisMonth.label },
-    previous: { ...mergeCash(hsLast, cashLast), label: lastMonth.label },
-  });
+  return NextResponse.json({ current, previous });
 }
