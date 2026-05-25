@@ -25,7 +25,7 @@ function fmt$(n: number) {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-[#0d0d0d] border border-[#1e1e1e] rounded-xl overflow-hidden min-w-[260px]">
+    <div className="bg-[#0d0d0d] border border-[#1e1e1e] rounded-xl overflow-hidden">
       <div className="px-5 py-3 border-b border-[#1e1e1e] bg-[#111]">
         <span className="text-xs font-bold uppercase tracking-widest text-[#e53e1e]">{title}</span>
       </div>
@@ -57,7 +57,7 @@ function TotalRow({ label, value, valueClass = "text-white" }: { label: string; 
 export function BreakdownTab({ data, loading }: { data: BreakdownData | null; loading: boolean }) {
   return (
     <div className="p-6">
-      <div className="w-fit space-y-6">
+      <div className="w-[440px]">
         {loading && <div className="text-center text-gray-500 py-10 text-sm">Loading...</div>}
         {!loading && data && (
           <div className="flex flex-col gap-5">
