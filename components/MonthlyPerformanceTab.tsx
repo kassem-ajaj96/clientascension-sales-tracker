@@ -33,19 +33,25 @@ function currentYearMonth(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function getRecentMonths(count: number): { value: string; label: string }[] {
-  const months = [];
+function prevYearMonth(ym: string): string {
+  const [year, month] = ym.split("-").map(Number);
+  const d = new Date(year, month - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function getMonthOptions(count: number): { value: string; label: string }[] {
+  const opts = [];
   const now = new Date();
   for (let i = 0; i < count; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleString("en-US", { month: "short", year: "numeric" });
-    months.push({ value, label });
+    const label = d.toLocaleString("en-US", { month: "long", year: "numeric" });
+    opts.push({ value, label });
   }
-  return months;
+  return opts;
 }
 
-const RECENT_MONTHS = getRecentMonths(6);
+const MONTH_OPTIONS = getMonthOptions(12);
 
 function fmt$(n: number) {
   return n.toLocaleString("en-US", {
@@ -154,14 +160,20 @@ export function MonthlyPerformanceTab({
 }: {
   data: MonthlyData | null;
   loading: boolean;
-  onMonthChange: (month: string) => void;
+  onMonthChange: (month1: string, month2: string) => void;
 }) {
   const [activeRep, setActiveRep] = useState<AEName>("All Team");
-  const [selectedMonth, setSelectedMonth] = useState(currentYearMonth);
+  const [month1, setMonth1] = useState(currentYearMonth);
+  const [month2, setMonth2] = useState(() => prevYearMonth(currentYearMonth()));
 
-  function handleMonthClick(month: string) {
-    setSelectedMonth(month);
-    onMonthChange(month);
+  function handleMonth1Change(val: string) {
+    setMonth1(val);
+    onMonthChange(val, month2);
+  }
+
+  function handleMonth2Change(val: string) {
+    setMonth2(val);
+    onMonthChange(month1, val);
   }
 
   const rows =
@@ -189,21 +201,33 @@ export function MonthlyPerformanceTab({
           ))}
         </div>
 
-        {/* Month selector */}
-        <div className="flex gap-2 flex-wrap">
-          {RECENT_MONTHS.map(({ value, label }) => (
-            <button
-              key={value}
-              onClick={() => handleMonthClick(value)}
-              className={`px-4 py-1.5 rounded text-sm font-bold transition-colors ${
-                selectedMonth === value
-                  ? "bg-white text-black"
-                  : "bg-[#111] text-gray-500 hover:text-gray-200 border border-[#2a2a2a]"
-              }`}
+        {/* Month pickers */}
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Month 1</span>
+            <select
+              value={month1}
+              onChange={(e) => handleMonth1Change(e.target.value)}
+              className="bg-[#111] border border-[#2a2a2a] text-white text-sm font-bold rounded px-3 py-1.5 [color-scheme:dark] cursor-pointer"
             >
-              {label}
-            </button>
-          ))}
+              {MONTH_OPTIONS.map(({ value, label }) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+          <span className="text-gray-600 font-bold mt-5">vs</span>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Month 2</span>
+            <select
+              value={month2}
+              onChange={(e) => handleMonth2Change(e.target.value)}
+              className="bg-[#111] border border-[#2a2a2a] text-white text-sm font-bold rounded px-3 py-1.5 [color-scheme:dark] cursor-pointer"
+            >
+              {MONTH_OPTIONS.map(({ value, label }) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {loading && (

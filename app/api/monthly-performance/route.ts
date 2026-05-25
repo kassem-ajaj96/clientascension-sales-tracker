@@ -98,15 +98,16 @@ async function getMonthData(from: string, to: string, label: string) {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const month = searchParams.get("month") || currentYearMonth();
-  const prev = prevYearMonth(month);
+  const now = currentYearMonth();
+  const month1 = searchParams.get("month1") || now;
+  const month2 = searchParams.get("month2") || prevYearMonth(now);
 
-  const thisRange = getMonthRange(month);
-  const prevRange = getMonthRange(prev);
+  const range1 = getMonthRange(month1);
+  const range2 = getMonthRange(month2);
 
   const [current, previous] = await Promise.all([
-    getMonthData(thisRange.from, thisRange.to, thisRange.label),
-    getMonthData(prevRange.from, prevRange.to, prevRange.label),
+    getMonthData(range1.from, range1.to, range1.label),
+    getMonthData(range2.from, range2.to, range2.label),
   ]);
 
   return NextResponse.json({ current, previous });
