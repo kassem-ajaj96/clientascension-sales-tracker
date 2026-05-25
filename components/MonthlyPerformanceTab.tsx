@@ -110,7 +110,7 @@ function buildRows(curr: Omit<RepStats, "name">, prev: Omit<RepStats, "name">): 
       diff,
       diffDisplay:
         diff !== null && diff !== 0
-          ? `${diff > 0 ? "+" : ""}${(diff * 100).toFixed(1)}pp`
+          ? `${diff > 0 ? "+" : ""}${(diff * 100).toFixed(1)}%`
           : null,
     };
   }
