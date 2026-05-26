@@ -7,8 +7,9 @@ import { SDRTab } from "@/components/SDRTab";
 import { SDRAETab } from "@/components/SDRAETab";
 import { BreakdownTab } from "@/components/BreakdownTab";
 import { MonthlyPerformanceTab } from "@/components/MonthlyPerformanceTab";
+import { ColdTrafficTab } from "@/components/ColdTrafficTab";
 
-type Tab = "ae" | "sdr" | "sdr-ae" | "breakdown" | "monthly";
+type Tab = "ae" | "sdr" | "sdr-ae" | "breakdown" | "monthly" | "cold";
 
 function defaultFrom() {
   const d = new Date();
@@ -31,11 +32,13 @@ export default function DashboardPage() {
   const [hsData, setHSData] = useState(null);
   const [bdData, setBDData] = useState(null);
   const [monthlyData, setMonthlyData] = useState(null);
+  const [coldData, setColdData] = useState(null);
   const [aeLoading, setAELoading] = useState(false);
   const [sdrLoading, setSDRLoading] = useState(false);
   const [hsLoading, setHSLoading] = useState(false);
   const [bdLoading, setBDLoading] = useState(false);
   const [monthlyLoading, setMonthlyLoading] = useState(false);
+  const [coldLoading, setColdLoading] = useState(false);
 
   const fetchAE = useCallback(async (f: string, t: string) => {
     setAELoading(true);
@@ -80,6 +83,16 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchCold = useCallback(async (f: string, t: string) => {
+    setColdLoading(true);
+    try {
+      const res = await fetch(`/api/cold-traffic?from=${f}&to=${t}`);
+      if (res.ok) setColdData(await res.json());
+    } finally {
+      setColdLoading(false);
+    }
+  }, []);
+
   const fetchMonthly = useCallback(async (month1?: string, month2?: string) => {
     setMonthlyLoading(true);
     try {
@@ -99,8 +112,9 @@ export default function DashboardPage() {
     fetchSDR(from, to);
     fetchHS(from, to);
     fetchBD(from, to);
+    fetchCold(from, to);
     fetchMonthly();
-  }, [from, to, fetchAE, fetchSDR, fetchHS, fetchBD, fetchMonthly]);
+  }, [from, to, fetchAE, fetchSDR, fetchHS, fetchBD, fetchCold, fetchMonthly]);
 
   function handleApply() {
     setFrom(pendingFrom);
@@ -128,6 +142,7 @@ export default function DashboardPage() {
       )}
       {tab === "breakdown" && <BreakdownTab data={bdData} loading={bdLoading} />}
       {tab === "monthly" && <MonthlyPerformanceTab data={monthlyData} loading={monthlyLoading} onMonthChange={(m1, m2) => fetchMonthly(m1, m2)} />}
+      {tab === "cold" && <ColdTrafficTab data={coldData} loading={coldLoading} />}
     </div>
   );
 }

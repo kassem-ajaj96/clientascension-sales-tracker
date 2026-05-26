@@ -170,6 +170,128 @@ export async function getHubSpotAEData(from: string, to: string, setter: string 
   return buildResponse(stats);
 }
 
+// ── Cold Traffic ──────────────────────────────────────────────────────────────
+
+const COLD_TRAFFIC_SOURCES = [
+  "Client Ascension Ads",
+  "CA 2",
+  "AIBC 3 - Retargeting - YT",
+  "Brand - Client Ascension",
+  "Client Ascension Search",
+  "AIAA Free Training 2 - Cold",
+  "AIAA Retargeting",
+  "Brand - AI Assisted Agency",
+  "AIAA Cold V1",
+  "YT AI Business Challenge 1",
+  "AIAA Free Training 1",
+  "AIAA Cold V1 - AI Marketing Tools (Males 25-44)",
+  "AIAA Cold V1 - Freelancing with AI (Males 25-44)",
+  "AIBC 2 - Branded Search",
+  "AIBC 2 (Warm)",
+  "Daniel Fazio Placement - Client Ascension Offers",
+];
+
+async function searchColdTrafficDeals(): Promise<{ id: string; properties: DealProps }[]> {
+  const deals: { id: string; properties: DealProps }[] = [];
+  let after: string | undefined;
+  do {
+    const body: Record<string, unknown> = {
+      filterGroups: [
+        {
+          filters: [
+            {
+              propertyName: "hyros_first_source",
+              operator: "IN",
+              values: COLD_TRAFFIC_SOURCES,
+            },
+          ],
+        },
+      ],
+      properties: ["hubspot_owner_id", "dealstage", "closed_lost_cause", "aiaa_call_scheduled"],
+      limit: 100,
+    };
+    if (after) body.after = after;
+    const result = await hs("/crm/v3/objects/deals/search", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    deals.push(...(result.results ?? []));
+    after = result.paging?.next?.after;
+  } while (after);
+  return deals;
+}
+
+type CTStats = { calls: number; liveCalls: number; offers: number; closes: number };
+
+function emptyCTStats(): CTStats {
+  return { calls: 0, liveCalls: 0, offers: 0, closes: 0 };
+}
+
+export async function getHubSpotColdTrafficData(from: string, to: string) {
+  const fromMs = new Date(from).getTime();
+  const toMs = new Date(`${to}T23:59:59`).getTime();
+
+  const [deals, ownerMap] = await Promise.all([
+    searchColdTrafficDeals(),
+    buildOwnerMap(),
+  ]);
+
+  const stats: Record<string, CTStats> = {};
+  for (const name of AE_NAMES) stats[name] = emptyCTStats();
+
+  for (const deal of deals) {
+    const { dealstage, closed_lost_cause, hubspot_owner_id, aiaa_call_scheduled } = deal.properties;
+
+    if (!aiaa_call_scheduled) continue;
+    const callMs = new Date(aiaa_call_scheduled).getTime();
+    if (isNaN(callMs) || callMs < fromMs || callMs > toMs) continue;
+
+    const ae = ownerMap[hubspot_owner_id];
+    if (!ae) continue;
+
+    stats[ae].calls++;
+    if (SHOWED_STAGES.has(dealstage)) stats[ae].liveCalls++;
+    if (isOffered(dealstage, closed_lost_cause ?? "")) stats[ae].offers++;
+    if (dealstage === CLOSED_WON) stats[ae].closes++;
+  }
+
+  const reps = AE_NAMES.map((name) => {
+    const s = stats[name] ?? emptyCTStats();
+    return {
+      name,
+      calls: s.calls,
+      liveCalls: s.liveCalls,
+      offers: s.offers,
+      closes: s.closes,
+      showRate: s.calls > 0 ? s.liveCalls / s.calls : null,
+      offerRate: s.liveCalls > 0 ? s.offers / s.liveCalls : null,
+      closeRate: s.liveCalls > 0 ? s.closes / s.liveCalls : null,
+    };
+  });
+
+  const raw = reps.reduce(
+    (acc, r) => ({
+      calls: acc.calls + r.calls,
+      liveCalls: acc.liveCalls + r.liveCalls,
+      offers: acc.offers + r.offers,
+      closes: acc.closes + r.closes,
+    }),
+    emptyCTStats()
+  );
+
+  return {
+    reps,
+    totals: {
+      ...raw,
+      showRate: raw.calls > 0 ? raw.liveCalls / raw.calls : null,
+      offerRate: raw.liveCalls > 0 ? raw.offers / raw.liveCalls : null,
+      closeRate: raw.liveCalls > 0 ? raw.closes / raw.liveCalls : null,
+    },
+  };
+}
+
+// ── SDR → AE ──────────────────────────────────────────────────────────────────
+
 function buildResponse(stats: Record<string, AEStats>) {
   const reps = AE_NAMES.map((name) => {
     const s = stats[name] ?? emptyStats();
