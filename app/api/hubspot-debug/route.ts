@@ -96,27 +96,25 @@ export async function GET() {
       pipelineStages = { error: "pipeline lookup failed" };
     }
 
-    // Search for deals that have hyros_first_source set, show actual values
-    let hyrosDeals: unknown[] = [];
+    // Collect ALL unique hyros_first_source values (paginate through all)
+    const uniqueHyrosSources = new Set<string>();
     let hyrosSearchError = "";
     try {
-      const hyrosResult = await hs("/crm/v3/objects/deals/search", {
-        method: "POST",
-        body: JSON.stringify({
-          filterGroups: [{
-            filters: [{ propertyName: "hyros_first_source", operator: "HAS_PROPERTY" }]
-          }],
-          properties: ["hyros_first_source", "hyros_first_source_platform", "hubspot_owner_id", "aiaa_call_scheduled"],
-          limit: 20,
-        }),
-      });
-      hyrosDeals = (hyrosResult.results ?? []).map((d: { id: string; properties: Record<string, string> }) => ({
-        id: d.id,
-        hyros_first_source: d.properties.hyros_first_source,
-        hyros_first_source_platform: d.properties.hyros_first_source_platform,
-        aiaa_call_scheduled: d.properties.aiaa_call_scheduled,
-        owner: d.properties.hubspot_owner_id,
-      }));
+      let after: string | undefined;
+      do {
+        const body: Record<string, unknown> = {
+          filterGroups: [{ filters: [{ propertyName: "hyros_first_source", operator: "HAS_PROPERTY" }] }],
+          properties: ["hyros_first_source"],
+          limit: 100,
+        };
+        if (after) body.after = after;
+        const hyrosResult = await hs("/crm/v3/objects/deals/search", { method: "POST", body: JSON.stringify(body) });
+        for (const d of hyrosResult.results ?? []) {
+          const val = (d as { properties: Record<string, string> }).properties.hyros_first_source;
+          if (val) uniqueHyrosSources.add(val);
+        }
+        after = hyrosResult.paging?.next?.after;
+      } while (after);
     } catch (_e) {
       hyrosSearchError = String(_e);
     }
