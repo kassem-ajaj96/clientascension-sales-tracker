@@ -180,6 +180,9 @@ function isColdTrafficSource(source: string): boolean {
   return COLD_TRAFFIC_KEYWORDS.some((kw) => lower.includes(kw.toLowerCase()));
 }
 
+// Owner IDs for the 5 AEs — used to narrow the cold traffic search server-side
+const AE_OWNER_IDS = ["191709153", "83317424", "83529533", "90936901", "90936902"];
+
 async function searchColdTrafficDeals(): Promise<{ id: string; properties: DealProps }[]> {
   const deals: { id: string; properties: DealProps }[] = [];
   let after: string | undefined;
@@ -187,7 +190,10 @@ async function searchColdTrafficDeals(): Promise<{ id: string; properties: DealP
     const body: Record<string, unknown> = {
       filterGroups: [
         {
-          filters: [{ propertyName: "hyros_first_source", operator: "HAS_PROPERTY" }],
+          filters: [
+            { propertyName: "hyros_first_source", operator: "HAS_PROPERTY" },
+            { propertyName: "hubspot_owner_id", operator: "IN", values: AE_OWNER_IDS },
+          ],
         },
       ],
       properties: ["hubspot_owner_id", "dealstage", "closed_lost_cause", "aiaa_call_scheduled", "hyros_first_source"],

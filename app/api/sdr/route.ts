@@ -22,7 +22,12 @@ export async function GET(req: NextRequest) {
   const from = searchParams.get("from") || defaultFrom();
   const to = searchParams.get("to") || defaultTo();
 
-  const rows = await getSheetRows("sdr database", "Date", from, to);
+  let rows: Record<string, string>[];
+  try {
+    rows = await getSheetRows("sdr database", "Date", from, to);
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 
   const byRep: Record<string, { dials: number; connects: number; convo: number; booked: number }> = {};
   for (const row of rows) {
