@@ -128,7 +128,7 @@ export async function GET() {
         uniqueStages.map((id) => [id, pipelineStages[id as string] ?? "unknown"])
       ),
       allPipelineStages: pipelineStages,
-      hyrosDeals,
+      uniqueHyrosSources: Array.from(uniqueHyrosSources),
       hyrosSearchError,
     });
   } catch (err) {
