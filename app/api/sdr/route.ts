@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 
   const byRep: Record<string, { dials: number; connects: number; convo: number; booked: number }> = {};
   for (const row of rows) {
-    const name = row["Closer"]?.trim();
+    const name = row["Setter"]?.trim();
     if (!name) continue;
     if (!byRep[name]) byRep[name] = { dials: 0, connects: 0, convo: 0, booked: 0 };
     byRep[name].dials += toNum(row["Dials"]);
@@ -75,9 +75,5 @@ export async function GET(req: NextRequest) {
     dialToBooking: raw.dials > 0 ? raw.meetingsBooked / raw.dials : null,
   };
 
-  return NextResponse.json({
-    reps,
-    totals,
-    _debug: { rowCount: rows.length, sampleColumns: rows[0] ? Object.keys(rows[0]) : [] },
-  });
+  return NextResponse.json({ reps, totals });
 }
