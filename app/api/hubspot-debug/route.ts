@@ -96,6 +96,23 @@ export async function GET() {
       pipelineStages = { error: "pipeline lookup failed" };
     }
 
+    // Fetch ALL properties of one sample deal to find hyros property names
+    let sampleDealAllProps: Record<string, unknown> = {};
+    let hyrosProps: Record<string, unknown> = {};
+    try {
+      if (dealsResult.results?.length > 0) {
+        const sampleId = dealsResult.results[0].id;
+        const sampleDeal = await hs(`/crm/v3/objects/deals/${sampleId}?properties=hyros_first_source,hyros_first_source_platform,hyros_source,hyros_first_touch_source,first_source,hs_analytics_source`);
+        sampleDealAllProps = sampleDeal.properties ?? {};
+        // Extract only hyros-related
+        hyrosProps = Object.fromEntries(
+          Object.entries(sampleDeal.properties ?? {}).filter(([k]) => k.toLowerCase().includes("hyros") || k.toLowerCase().includes("source"))
+        );
+      }
+    } catch (_e) {
+      sampleDealAllProps = { error: String(_e) };
+    }
+
     return NextResponse.json({
       totalDeals: dealsResult.total,
       uniqueOwnerIds: ownerIds,
@@ -105,6 +122,8 @@ export async function GET() {
         uniqueStages.map((id) => [id, pipelineStages[id as string] ?? "unknown"])
       ),
       allPipelineStages: pipelineStages,
+      sampleDealSourceProps: hyrosProps,
+      sampleDealAllProps,
     });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
