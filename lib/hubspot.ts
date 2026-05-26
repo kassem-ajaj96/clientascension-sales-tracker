@@ -188,14 +188,12 @@ async function searchColdTrafficDeals(): Promise<{ id: string; properties: DealP
   let after: string | undefined;
   do {
     const body: Record<string, unknown> = {
-      filterGroups: [
-        {
-          filters: [
-            { propertyName: "hyros_first_source", operator: "HAS_PROPERTY" },
-            { propertyName: "hubspot_owner_id", operator: "IN", values: AE_OWNER_IDS },
-          ],
-        },
-      ],
+      filterGroups: AE_OWNER_IDS.map((ownerId) => ({
+        filters: [
+          { propertyName: "hyros_first_source", operator: "HAS_PROPERTY" },
+          { propertyName: "hubspot_owner_id", operator: "EQ", value: ownerId },
+        ],
+      })),
       properties: ["hubspot_owner_id", "dealstage", "closed_lost_cause", "aiaa_call_scheduled", "hyros_first_source"],
       limit: 100,
     };
