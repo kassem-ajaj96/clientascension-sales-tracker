@@ -75,5 +75,9 @@ export async function GET(req: NextRequest) {
     dialToBooking: raw.dials > 0 ? raw.meetingsBooked / raw.dials : null,
   };
 
-  return NextResponse.json({ reps, totals });
+  return NextResponse.json({
+    reps,
+    totals,
+    _debug: { rowCount: rows.length, sampleColumns: rows[0] ? Object.keys(rows[0]) : [] },
+  });
 }
