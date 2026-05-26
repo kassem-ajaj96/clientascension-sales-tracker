@@ -60,6 +60,7 @@ interface DealProps {
   hubspot_owner_id: string;
   amount: string;
   aiaa_call_scheduled: string;
+  hyros_first_source: string;
 }
 
 async function searchDeals(
@@ -172,24 +173,12 @@ export async function getHubSpotAEData(from: string, to: string, setter: string 
 
 // ── Cold Traffic ──────────────────────────────────────────────────────────────
 
-const COLD_TRAFFIC_SOURCES = [
-  "Client Ascension Ads",
-  "CA 2",
-  "AIBC 3 - Retargeting - YT",
-  "Brand - Client Ascension",
-  "Client Ascension Search",
-  "AIAA Free Training 2 - Cold",
-  "AIAA Retargeting",
-  "Brand - AI Assisted Agency",
-  "AIAA Cold V1",
-  "YT AI Business Challenge 1",
-  "AIAA Free Training 1",
-  "AIAA Cold V1 - AI Marketing Tools (Males 25-44)",
-  "AIAA Cold V1 - Freelancing with AI (Males 25-44)",
-  "AIBC 2 - Branded Search",
-  "AIBC 2 (Warm)",
-  "Daniel Fazio Placement - Client Ascension Offers",
-];
+const COLD_TRAFFIC_KEYWORDS = ["AIAA Cold", "AIBC", "AIAA Retargeting", "Daniel Fazio Placement"];
+
+function isColdTrafficSource(source: string): boolean {
+  const lower = source.toLowerCase();
+  return COLD_TRAFFIC_KEYWORDS.some((kw) => lower.includes(kw.toLowerCase()));
+}
 
 async function searchColdTrafficDeals(): Promise<{ id: string; properties: DealProps }[]> {
   const deals: { id: string; properties: DealProps }[] = [];
@@ -198,16 +187,10 @@ async function searchColdTrafficDeals(): Promise<{ id: string; properties: DealP
     const body: Record<string, unknown> = {
       filterGroups: [
         {
-          filters: [
-            {
-              propertyName: "hyros_first_source",
-              operator: "IN",
-              values: COLD_TRAFFIC_SOURCES,
-            },
-          ],
+          filters: [{ propertyName: "hyros_first_source", operator: "HAS_PROPERTY" }],
         },
       ],
-      properties: ["hubspot_owner_id", "dealstage", "closed_lost_cause", "aiaa_call_scheduled"],
+      properties: ["hubspot_owner_id", "dealstage", "closed_lost_cause", "aiaa_call_scheduled", "hyros_first_source"],
       limit: 100,
     };
     if (after) body.after = after;
@@ -240,7 +223,9 @@ export async function getHubSpotColdTrafficData(from: string, to: string) {
   for (const name of AE_NAMES) stats[name] = emptyCTStats();
 
   for (const deal of deals) {
-    const { dealstage, closed_lost_cause, hubspot_owner_id, aiaa_call_scheduled } = deal.properties;
+    const { dealstage, closed_lost_cause, hubspot_owner_id, aiaa_call_scheduled, hyros_first_source } = deal.properties;
+
+    if (!hyros_first_source || !isColdTrafficSource(hyros_first_source)) continue;
 
     if (!aiaa_call_scheduled) continue;
     const callMs = new Date(aiaa_call_scheduled).getTime();
