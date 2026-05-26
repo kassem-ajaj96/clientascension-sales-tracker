@@ -96,21 +96,29 @@ export async function GET() {
       pipelineStages = { error: "pipeline lookup failed" };
     }
 
-    // Fetch ALL properties of one sample deal to find hyros property names
-    let sampleDealAllProps: Record<string, unknown> = {};
-    let hyrosProps: Record<string, unknown> = {};
+    // Search for deals that have hyros_first_source set, show actual values
+    let hyrosDeals: unknown[] = [];
+    let hyrosSearchError = "";
     try {
-      if (dealsResult.results?.length > 0) {
-        const sampleId = dealsResult.results[0].id;
-        const sampleDeal = await hs(`/crm/v3/objects/deals/${sampleId}?properties=hyros_first_source,hyros_first_source_platform,hyros_source,hyros_first_touch_source,first_source,hs_analytics_source`);
-        sampleDealAllProps = sampleDeal.properties ?? {};
-        // Extract only hyros-related
-        hyrosProps = Object.fromEntries(
-          Object.entries(sampleDeal.properties ?? {}).filter(([k]) => k.toLowerCase().includes("hyros") || k.toLowerCase().includes("source"))
-        );
-      }
+      const hyrosResult = await hs("/crm/v3/objects/deals/search", {
+        method: "POST",
+        body: JSON.stringify({
+          filterGroups: [{
+            filters: [{ propertyName: "hyros_first_source", operator: "HAS_PROPERTY" }]
+          }],
+          properties: ["hyros_first_source", "hyros_first_source_platform", "hubspot_owner_id", "aiaa_call_scheduled"],
+          limit: 20,
+        }),
+      });
+      hyrosDeals = (hyrosResult.results ?? []).map((d: { id: string; properties: Record<string, string> }) => ({
+        id: d.id,
+        hyros_first_source: d.properties.hyros_first_source,
+        hyros_first_source_platform: d.properties.hyros_first_source_platform,
+        aiaa_call_scheduled: d.properties.aiaa_call_scheduled,
+        owner: d.properties.hubspot_owner_id,
+      }));
     } catch (_e) {
-      sampleDealAllProps = { error: String(_e) };
+      hyrosSearchError = String(_e);
     }
 
     return NextResponse.json({
@@ -122,8 +130,8 @@ export async function GET() {
         uniqueStages.map((id) => [id, pipelineStages[id as string] ?? "unknown"])
       ),
       allPipelineStages: pipelineStages,
-      sampleDealSourceProps: hyrosProps,
-      sampleDealAllProps,
+      hyrosDeals,
+      hyrosSearchError,
     });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
