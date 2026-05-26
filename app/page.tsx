@@ -107,14 +107,19 @@ export default function DashboardPage() {
     }
   }, []);
 
+  // Google Sheets tabs: fetch on load and when dates change
   useEffect(() => {
     fetchAE(from, to);
     fetchSDR(from, to);
-    fetchHS(from, to);
     fetchBD(from, to);
-    fetchCold(from, to);
     fetchMonthly();
-  }, [from, to, fetchAE, fetchSDR, fetchHS, fetchBD, fetchCold, fetchMonthly]);
+  }, [from, to, fetchAE, fetchSDR, fetchBD, fetchMonthly]);
+
+  // HubSpot tabs: fetch only when the tab is active (avoids rate limit contention)
+  useEffect(() => {
+    if (tab === "sdr-ae") fetchHS(from, to);
+    if (tab === "cold") fetchCold(from, to);
+  }, [tab, from, to, fetchHS, fetchCold]);
 
   function handleApply() {
     setFrom(pendingFrom);
