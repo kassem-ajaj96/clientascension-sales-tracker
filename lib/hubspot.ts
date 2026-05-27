@@ -61,6 +61,7 @@ interface DealProps {
   amount: string;
   aiaa_call_scheduled: string;
   hyros_first_source: string;
+  closedate: string;
 }
 
 async function searchDeals(
@@ -208,7 +209,7 @@ async function searchColdTrafficDeals(): Promise<{ id: string; properties: DealP
           { propertyName: "hubspot_owner_id", operator: "EQ", value: ownerId },
         ],
       })),
-      properties: ["hubspot_owner_id", "dealstage", "closed_lost_cause", "aiaa_call_scheduled", "hyros_first_source"],
+      properties: ["hubspot_owner_id", "dealstage", "closed_lost_cause", "aiaa_call_scheduled", "hyros_first_source", "closedate"],
       limit: 100,
     };
     if (after) body.after = after;
@@ -241,21 +242,30 @@ export async function getHubSpotColdTrafficData(from: string, to: string) {
   for (const name of AE_NAMES) stats[name] = emptyCTStats();
 
   for (const deal of deals) {
-    const { dealstage, closed_lost_cause, hubspot_owner_id, aiaa_call_scheduled, hyros_first_source } = deal.properties;
+    const { dealstage, closed_lost_cause, hubspot_owner_id, aiaa_call_scheduled, hyros_first_source, closedate } = deal.properties;
 
     if (!hyros_first_source || !isColdTrafficSource(hyros_first_source)) continue;
-
-    if (!aiaa_call_scheduled) continue;
-    const callMs = new Date(aiaa_call_scheduled).getTime();
-    if (isNaN(callMs) || callMs < fromMs || callMs > toMs) continue;
 
     const ae = ownerMap[hubspot_owner_id];
     if (!ae) continue;
 
-    stats[ae].calls++;
-    if (SHOWED_STAGES.has(dealstage)) stats[ae].liveCalls++;
-    if (isOffered(dealstage, closed_lost_cause ?? "")) stats[ae].offers++;
-    if (dealstage === CLOSED_WON) stats[ae].closes++;
+    // Calls / shows / offers: filtered by aiaa_call_scheduled date
+    if (aiaa_call_scheduled) {
+      const callMs = new Date(aiaa_call_scheduled).getTime();
+      if (!isNaN(callMs) && callMs >= fromMs && callMs <= toMs) {
+        stats[ae].calls++;
+        if (SHOWED_STAGES.has(dealstage)) stats[ae].liveCalls++;
+        if (isOffered(dealstage, closed_lost_cause ?? "")) stats[ae].offers++;
+      }
+    }
+
+    // Closes: filtered by closedate
+    if (dealstage === CLOSED_WON && closedate) {
+      const closedMs = new Date(closedate).getTime();
+      if (!isNaN(closedMs) && closedMs >= fromMs && closedMs <= toMs) {
+        stats[ae].closes++;
+      }
+    }
   }
 
   const reps = AE_NAMES.map((name) => {
