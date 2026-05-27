@@ -41,9 +41,9 @@ export function ColdTrafficTab({ data, loading }: { data: CTData | null; loading
   const totalRow = activeRep === "All Team" ? data?.totals : null;
 
   return (
-    <div className="p-6">
-      <div className="space-y-6 w-fit">
-        <div className="grid grid-cols-4 gap-4">
+    <div className="p-4 sm:p-6">
+      <div className="space-y-6 w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <div className="col-span-1">
             <KPICard
               label="Show Rate"
@@ -83,7 +83,7 @@ export function ColdTrafficTab({ data, loading }: { data: CTData | null; loading
           />
         </div>
 
-        <div className="bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg overflow-hidden">
+        <div className="bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg overflow-x-auto">
           {loading && (
             <div className="text-center text-gray-500 py-10 text-sm">Loading...</div>
           )}

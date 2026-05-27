@@ -56,8 +56,8 @@ function TotalRow({ label, value, valueClass = "text-white" }: { label: string; 
 
 export function BreakdownTab({ data, loading }: { data: BreakdownData | null; loading: boolean }) {
   return (
-    <div className="p-6">
-      <div className="w-[440px]">
+    <div className="p-4 sm:p-6">
+      <div className="w-full max-w-[440px]">
         {loading && <div className="text-center text-gray-500 py-10 text-sm">Loading...</div>}
         {!loading && data && (
           <div className="flex flex-col gap-5">

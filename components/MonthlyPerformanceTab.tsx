@@ -182,8 +182,8 @@ export function MonthlyPerformanceTab({
       : [];
 
   return (
-    <div className="p-6">
-      <div className="space-y-5 w-fit">
+    <div className="p-4 sm:p-6">
+      <div className="space-y-5 w-full">
         {/* Rep selector */}
         <div className="flex gap-2 flex-wrap">
           {AES.map((rep) => (
@@ -202,7 +202,7 @@ export function MonthlyPerformanceTab({
         </div>
 
         {/* Month pickers */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Month 1</span>
             <select
@@ -235,7 +235,7 @@ export function MonthlyPerformanceTab({
         )}
 
         {!loading && data && (
-          <div className="bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg overflow-hidden">
+          <div className="bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#1e1e1e] text-gray-500 text-xs uppercase tracking-wide">

@@ -37,9 +37,9 @@ export function AETab({ data, loading }: { data: AEData | null; loading: boolean
   const t = data?.totals;
 
   return (
-    <div className="p-6">
-      <div className="space-y-6 w-fit">
-      <div className="grid grid-cols-5 gap-4">
+    <div className="p-4 sm:p-6">
+      <div className="space-y-6 w-full">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
         <KPICard label="Show Rate" value={t ? fmtPct(t.showRate) : "—"} color="blue" />
         <KPICard label="Offer Rate" value={t ? fmtPct(t.offerRate) : "—"} color="green" />
         <KPICard label="Close Rate" value={t ? fmtPct(t.closeRate) : "—"} color="purple" />
@@ -47,7 +47,7 @@ export function AETab({ data, loading }: { data: AEData | null; loading: boolean
         <KPICard label="Cash Collected" value={t ? fmt$(t.cashCollected) : "—"} color="green" />
       </div>
 
-      <div className="bg-black border border-[#1e1e1e] rounded-lg overflow-hidden">
+      <div className="bg-black border border-[#1e1e1e] rounded-lg overflow-x-auto">
         {loading && (
           <div className="text-center text-gray-500 py-10 text-sm">Loading...</div>
         )}

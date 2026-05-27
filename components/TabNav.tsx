@@ -16,7 +16,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 export function TabNav({ active, onChange }: TabNavProps) {
   return (
-    <nav className="flex border-b border-[#1a1a1a] px-6 bg-black">
+    <nav className="flex border-b border-[#1a1a1a] px-4 sm:px-6 bg-black overflow-x-auto">
       {TABS.map(({ id, label }) => (
         <button
           key={id}
