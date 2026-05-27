@@ -42,8 +42,9 @@ export async function GET(req: NextRequest) {
     const name = row["Closer"]?.trim();
     if (!name) continue;
     if (!closesByCloser[name]) closesByCloser[name] = { closes: 0, cash: 0 };
-    closesByCloser[name].closes += 1;
+    const isPayment = row["Type"]?.trim().toLowerCase() === "payment";
     closesByCloser[name].cash += toNum(row["Upfront Cash"]);
+    if (!isPayment) closesByCloser[name].closes += 1;
   }
 
   const reps = AE_NAMES.map((name) => {

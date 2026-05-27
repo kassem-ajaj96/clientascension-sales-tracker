@@ -52,8 +52,9 @@ async function getMonthData(from: string, to: string, label: string) {
   for (const row of closesRows) {
     const name = row["Closer"]?.trim();
     if (!name || !byCloser[name]) continue;
-    byCloser[name].closes += 1;
+    const isPayment = row["Type"]?.trim().toLowerCase() === "payment";
     byCloser[name].cash += toNum(row["Upfront Cash"]);
+    if (!isPayment) byCloser[name].closes += 1;
   }
 
   const reps = AE_NAMES.map((name) => {

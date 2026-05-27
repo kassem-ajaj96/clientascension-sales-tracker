@@ -35,18 +35,18 @@ export async function GET(req: NextRequest) {
     const plan = row["Payment Plan"]?.trim();
     const type = row["Close type"]?.trim();
     const cash = toNum(row["Upfront Cash"]);
+    const isPayment = row["Type"]?.trim().toLowerCase() === "payment";
 
-    totalCloses++;
     totalCash += cash;
-
-    if (plan) {
-      paymentPlans[plan] = (paymentPlans[plan] || 0) + 1;
-    }
-
     if (type) {
       if (!closeTypes[type]) closeTypes[type] = { count: 0, cash: 0 };
-      closeTypes[type].count++;
       closeTypes[type].cash += cash;
+    }
+
+    if (!isPayment) {
+      totalCloses++;
+      if (plan) paymentPlans[plan] = (paymentPlans[plan] || 0) + 1;
+      if (type) closeTypes[type].count++;
     }
   }
 
