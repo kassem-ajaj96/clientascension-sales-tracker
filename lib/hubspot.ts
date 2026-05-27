@@ -173,7 +173,21 @@ export async function getHubSpotAEData(from: string, to: string, setter: string 
 
 // ── Cold Traffic ──────────────────────────────────────────────────────────────
 
-const COLD_TRAFFIC_KEYWORDS = ["AIAA Cold", "AIBC", "AIAA Retargeting", "Daniel Fazio Placement"];
+const COLD_TRAFFIC_KEYWORDS = [
+  "cold",
+  "statics",
+  "AIBC",
+  "CB Traveling",
+  "DF Evan",
+  "free training",
+  "retargeting",
+  "SWAW",
+  "Daniel Fazio Placement - AIAA Ads - DF - YT - Ayman 10/1 - Set 2 - Direct Angle 2",
+  "These_ai_offers_are_working_right_now_steal_them",
+  "Winners up to 12/30/2025 - No Optin",
+  "Youtube_ads_description",
+  "YT AIAA",
+];
 
 function isColdTrafficSource(source: string): boolean {
   const lower = source.toLowerCase();
