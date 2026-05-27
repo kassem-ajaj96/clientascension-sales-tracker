@@ -9,9 +9,9 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "ae", label: "Closer" },
   { id: "sdr", label: "Setter" },
   { id: "sdr-ae", label: "Setter → Closer" },
+  { id: "cold", label: "Cold Traffic" },
   { id: "breakdown", label: "Breakdown" },
   { id: "monthly", label: "Monthly Performance" },
-  { id: "cold", label: "Cold Traffic" },
 ];
 
 export function TabNav({ active, onChange }: TabNavProps) {
