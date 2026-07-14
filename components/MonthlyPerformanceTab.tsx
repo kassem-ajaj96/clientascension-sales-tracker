@@ -176,9 +176,10 @@ function buildReportHTML(
   sdrData: { reps: any[]; totals: any } | null,
   hsAll: { reps: any[]; totals: any } | null,
   hsAntwon: { reps: any[]; totals: any } | null,
-  hsNoah: { reps: any[]; totals: any } | null
+  hsNoah: { reps: any[]; totals: any } | null,
+  generatedAt: string
 ): string {
-  const p = (v: number | null) => (v === null ? "—" : `${(v * 100).toFixed(1)}%`);
+  const pct = (v: number | null) => (v === null ? "—" : `${(v * 100).toFixed(1)}%`);
   const $m = (n: number) =>
     n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const $mOrDash = (n: number | null) => (n === null ? "—" : $m(n));
@@ -186,11 +187,11 @@ function buildReportHTML(
   const css = `
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: #111; background: white; }
-    .page { padding: 44px 40px; page-break-after: always; }
+    .page { padding: 44px 40px 64px; page-break-after: always; position: relative; min-height: 100vh; }
     .page:last-child { page-break-after: avoid; }
     .hdr { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #e53e1e; padding-bottom: 12px; margin-bottom: 26px; }
     .brand { font-size: 15px; font-weight: 900; color: #e53e1e; letter-spacing: 0.08em; text-transform: uppercase; }
-    .period { font-size: 12px; font-weight: 600; color: #666; }
+    .period { font-size: 12px; font-weight: 600; color: #555; }
     .title { font-size: 20px; font-weight: 800; color: #111; margin-bottom: 20px; }
     .kpis { display: flex; gap: 12px; margin-bottom: 20px; }
     .kpi { flex: 1; border: 1px solid #e5e5e5; border-radius: 8px; padding: 14px; text-align: center; }
@@ -205,7 +206,6 @@ function buildReportHTML(
     td.r { text-align: right; }
     td.c { text-align: center; }
     td.name { font-weight: 700; color: #111; }
-    td.money { color: #16a34a; font-weight: 700; text-align: right; }
     tr.tot td { font-weight: 800; background: #f8f8f8; color: #111; border-top: 2px solid #e5e5e5; border-bottom: none; }
     .pos { color: #16a34a; font-weight: 700; }
     .neg { color: #dc2626; font-weight: 700; }
@@ -214,6 +214,7 @@ function buildReportHTML(
     .bg { background: #dcfce7; color: #16a34a; }
     .br { background: #fee2e2; color: #dc2626; }
     .bn { background: #f5f5f5; color: #888; }
+    .footer { position: absolute; bottom: 20px; left: 40px; right: 40px; display: flex; justify-content: space-between; font-size: 10px; color: #aaa; border-top: 1px solid #e5e5e5; padding-top: 8px; }
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .page { page-break-after: always; }
@@ -223,6 +224,10 @@ function buildReportHTML(
 
   function hdr(period: string) {
     return `<div class="hdr"><div class="brand">Client Ascension</div><div class="period">${period}</div></div>`;
+  }
+
+  function footer(pageNum: number, total: number) {
+    return `<div class="footer"><span>Generated ${generatedAt}</span><span>Page ${pageNum} of ${total}</span></div>`;
   }
 
   function badge(v: number | null): string {
@@ -244,7 +249,10 @@ function buildReportHTML(
     return `<span class="${cls}">${display}</span>`;
   }
 
-  function closerPage(name: string): string {
+  // Pages 1–N: All Team + one page per closer pulled from data
+  const closerNames = ["All Team", ...(monthlyData?.current.reps.map((r) => r.name) ?? [])];
+
+  function closerPage(name: string, pageNum: number, total: number): string {
     const zeroStats = {
       scheduled: 0, showed: 0, offered: 0, closes: 0, cashCollected: 0,
       cashPerCall: null, showRate: null, offerRate: null, closeRate: null,
@@ -258,16 +266,17 @@ function buildReportHTML(
         ? monthlyData?.previous.totals ?? zeroStats
         : monthlyData?.previous.reps.find((r) => r.name === name) ?? zeroStats;
 
+    // Template: METRIC | PREV MONTH | REPORT MONTH | GROWTH
     const rows = [
-      ["Calls", String(curr.scheduled), String(prev.scheduled), diffHtml(curr.scheduled, prev.scheduled, "num")],
-      ["Shows", String(curr.showed), String(prev.showed), diffHtml(curr.showed, prev.showed, "num")],
-      ["Offers", String(curr.offered), String(prev.offered), diffHtml(curr.offered, prev.offered, "num")],
-      ["Closes", String(curr.closes), String(prev.closes), diffHtml(curr.closes, prev.closes, "num")],
-      ["Cash Collected", $m(curr.cashCollected), $m(prev.cashCollected), diffHtml(curr.cashCollected, prev.cashCollected, "money")],
-      ["Cash / Call", $mOrDash(curr.cashPerCall), $mOrDash(prev.cashPerCall), diffHtml(curr.cashPerCall, prev.cashPerCall, "money")],
-      ["Show Rate", p(curr.showRate), p(prev.showRate), diffHtml(curr.showRate, prev.showRate, "pct")],
-      ["Offer Rate", p(curr.offerRate), p(prev.offerRate), diffHtml(curr.offerRate, prev.offerRate, "pct")],
-      ["Close Rate", p(curr.closeRate), p(prev.closeRate), diffHtml(curr.closeRate, prev.closeRate, "pct")],
+      ["Calls",         String(prev.scheduled),   String(curr.scheduled),   diffHtml(curr.scheduled,   prev.scheduled,   "num")],
+      ["Shows",         String(prev.showed),       String(curr.showed),       diffHtml(curr.showed,       prev.showed,       "num")],
+      ["Offers",        String(prev.offered),      String(curr.offered),      diffHtml(curr.offered,      prev.offered,      "num")],
+      ["Closes",        String(prev.closes),       String(curr.closes),       diffHtml(curr.closes,       prev.closes,       "num")],
+      ["Cash Collected",$m(prev.cashCollected),    $m(curr.cashCollected),    diffHtml(curr.cashCollected,prev.cashCollected,"money")],
+      ["Cash/Call",     $mOrDash(prev.cashPerCall),$mOrDash(curr.cashPerCall),diffHtml(curr.cashPerCall,  prev.cashPerCall,  "money")],
+      ["Show Rate",     pct(prev.showRate),         pct(curr.showRate),         diffHtml(curr.showRate,     prev.showRate,     "pct")],
+      ["Offer Rate",    pct(prev.offerRate),        pct(curr.offerRate),        diffHtml(curr.offerRate,    prev.offerRate,    "pct")],
+      ["Close Rate",    pct(prev.closeRate),        pct(curr.closeRate),        diffHtml(curr.closeRate,    prev.closeRate,    "pct")],
     ];
 
     return `
@@ -276,36 +285,31 @@ function buildReportHTML(
       <table>
         <thead><tr>
           <th>Metric</th>
-          <th class="r">${m1Label}</th>
           <th class="r">${m2Label}</th>
+          <th class="r">${m1Label}</th>
           <th class="c">Growth</th>
         </tr></thead>
         <tbody>
-          ${rows.map(([lbl, c, pv, d]) => `
+          ${rows.map(([lbl, pv, cv, d]) => `
             <tr>
               <td class="name">${lbl}</td>
-              <td class="r"><strong>${c}</strong></td>
               <td class="r" style="color:#999">${pv}</td>
+              <td class="r"><strong>${cv}</strong></td>
               <td class="c">${d}</td>
             </tr>
           `).join("")}
         </tbody>
       </table>
+      ${footer(pageNum, total)}
     `;
   }
 
-  function coldPage(): string {
+  function coldPage(pageNum: number, total: number): string {
     const t = coldData?.totals;
     const reps = coldData?.reps ?? [];
     return `
       ${hdr(m1Label)}
       <div class="title">Cold Traffic Performance</div>
-      ${t ? `<div class="kpis">
-        <div class="kpi"><div class="kpi-lbl">Show Rate</div><div class="kpi-val">${p(t.showRate)}</div></div>
-        <div class="kpi"><div class="kpi-lbl">Offer Rate</div><div class="kpi-val">${p(t.offerRate)}</div></div>
-        <div class="kpi"><div class="kpi-lbl">Close Rate</div><div class="kpi-val">${p(t.closeRate)}</div></div>
-        <div class="kpi"><div class="kpi-lbl">Team Calls</div><div class="kpi-val">${t.calls}</div></div>
-      </div>` : ""}
       <table>
         <thead><tr>
           <th>Rep</th><th class="r">Calls</th><th class="r">Live Calls</th>
@@ -333,21 +337,22 @@ function buildReportHTML(
           </tr>` : ""}
         </tbody>
       </table>
+      ${footer(pageNum, total)}
     `;
   }
 
-  function setterCloserPage(hs: { reps: any[]; totals: any } | null, setterName: string): string {
+  function setterCloserPage(hs: { reps: any[]; totals: any } | null, setterName: string, pageNum: number, total: number): string {
     const t = hs?.totals;
     const reps = hs?.reps ?? [];
     return `
       ${hdr(m1Label)}
       <div class="title">Setter → Closer: ${setterName}</div>
-      ${t ? `<div class="kpis">
-        <div class="kpi"><div class="kpi-lbl">Show Rate</div><div class="kpi-val">${p(t.showRate)}</div></div>
-        <div class="kpi"><div class="kpi-lbl">Offer Rate</div><div class="kpi-val">${p(t.offerRate)}</div></div>
-        <div class="kpi"><div class="kpi-lbl">Close Rate</div><div class="kpi-val">${p(t.closeRate)}</div></div>
-        <div class="kpi"><div class="kpi-lbl">Team Closes</div><div class="kpi-val">${t.closes}</div></div>
-      </div>` : ""}
+      <div class="kpis">
+        <div class="kpi"><div class="kpi-lbl">Show Rate</div><div class="kpi-val">${pct(t?.showRate ?? null)}</div></div>
+        <div class="kpi"><div class="kpi-lbl">Offer Rate</div><div class="kpi-val">${pct(t?.offerRate ?? null)}</div></div>
+        <div class="kpi"><div class="kpi-lbl">Close Rate</div><div class="kpi-val">${pct(t?.closeRate ?? null)}</div></div>
+        <div class="kpi"><div class="kpi-lbl">Team Closes</div><div class="kpi-val">${t?.closes ?? "—"}</div></div>
+      </div>
       <table>
         <thead><tr>
           <th>Rep</th><th class="r">Calls</th><th class="r">Mtg Sched</th>
@@ -375,21 +380,22 @@ function buildReportHTML(
           </tr>` : ""}
         </tbody>
       </table>
+      ${footer(pageNum, total)}
     `;
   }
 
-  function setterPage(): string {
+  function setterPage(pageNum: number, total: number): string {
     const t = sdrData?.totals;
     const reps = sdrData?.reps ?? [];
     return `
       ${hdr(m1Label)}
       <div class="title">Setter Performance</div>
-      ${t ? `<div class="kpis">
-        <div class="kpi"><div class="kpi-lbl">Total Dials</div><div class="kpi-val">${t.dials}</div></div>
-        <div class="kpi"><div class="kpi-lbl">Total Connects</div><div class="kpi-val">${t.connects}</div></div>
-        <div class="kpi"><div class="kpi-lbl">Total Conversations</div><div class="kpi-val">${t.convo}</div></div>
-        <div class="kpi"><div class="kpi-lbl">Total Booked</div><div class="kpi-val">${t.meetingsBooked}</div></div>
-      </div>` : ""}
+      <div class="kpis">
+        <div class="kpi"><div class="kpi-lbl">Total Dials</div><div class="kpi-val">${t?.dials ?? "—"}</div></div>
+        <div class="kpi"><div class="kpi-lbl">Total Connects</div><div class="kpi-val">${t?.connects ?? "—"}</div></div>
+        <div class="kpi"><div class="kpi-lbl">Total Conversations</div><div class="kpi-val">${t?.convo ?? "—"}</div></div>
+        <div class="kpi"><div class="kpi-lbl">Total Booked</div><div class="kpi-val">${t?.meetingsBooked ?? "—"}</div></div>
+      </div>
       <table>
         <thead><tr>
           <th>Rep</th><th class="r">Dials</th><th class="r">Connects</th>
@@ -420,19 +426,34 @@ function buildReportHTML(
           </tr>` : ""}
         </tbody>
       </table>
+      ${footer(pageNum, total)}
     `;
   }
 
-  const pages = [
-    ...["All Team", "Peter", "Logan", "Andrew", "Ciaran"].map(
-      (name) => `<div class="page">${closerPage(name)}</div>`
-    ),
-    `<div class="page">${coldPage()}</div>`,
-    `<div class="page">${setterCloserPage(hsAll, "All")}</div>`,
-    `<div class="page">${setterCloserPage(hsAntwon, "Antwon")}</div>`,
-    `<div class="page">${setterCloserPage(hsNoah, "Noah")}</div>`,
-    `<div class="page" style="page-break-after:avoid">${setterPage()}</div>`,
+  // Build page list with correct page numbers
+  const pageContents: string[] = [
+    ...closerNames.map((name) => closerPage(name, 0, 0)),   // numbered below
+    coldPage(0, 0),
+    setterCloserPage(hsAll, "All", 0, 0),
+    setterCloserPage(hsAntwon, "Antwon", 0, 0),
+    setterCloserPage(hsNoah, "Noah", 0, 0),
+    setterPage(0, 0),
   ];
+  const total = pageContents.length;
+
+  // Re-build with correct numbers now that we know total
+  const numberedPages: string[] = [
+    ...closerNames.map((name, i) => closerPage(name, i + 1, total)),
+    coldPage(closerNames.length + 1, total),
+    setterCloserPage(hsAll,    "All",    closerNames.length + 2, total),
+    setterCloserPage(hsAntwon, "Antwon", closerNames.length + 3, total),
+    setterCloserPage(hsNoah,   "Noah",   closerNames.length + 4, total),
+    setterPage(closerNames.length + 5, total),
+  ];
+
+  const pages = numberedPages.map((content, i) =>
+    `<div class="page"${i === numberedPages.length - 1 ? ' style="page-break-after:avoid"' : ""}>${content}</div>`
+  );
 
   return `<!DOCTYPE html>
 <html>
@@ -507,7 +528,11 @@ export function MonthlyReportTab({
         hsNoahRes.ok ? hsNoahRes.json() : null,
       ]);
 
-      const html = buildReportHTML(data, m1Label, m2Label, coldData, sdrData, hsAll, hsAntwon, hsNoah);
+      const generatedAt = new Date().toLocaleString("en-US", {
+        month: "long", day: "numeric", year: "numeric",
+        hour: "numeric", minute: "2-digit",
+      });
+      const html = buildReportHTML(data, m1Label, m2Label, coldData, sdrData, hsAll, hsAntwon, hsNoah, generatedAt);
       const win = window.open("", "_blank");
       if (win) {
         win.document.write(html);
