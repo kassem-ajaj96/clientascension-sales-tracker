@@ -19,7 +19,7 @@ interface CTData {
   totals: Omit<CTRep, "name">;
 }
 
-const AES = ["All Team", "Peter", "Logan", "Andrew", "Ciaran", "Fourkan"] as const;
+const AES = ["All Team", "Peter", "Logan", "Andrew", "Ciaran"] as const;
 type AEName = (typeof AES)[number];
 
 function fmtPct(v: number | null) {
