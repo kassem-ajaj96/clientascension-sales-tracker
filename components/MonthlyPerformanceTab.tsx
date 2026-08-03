@@ -204,7 +204,9 @@ function buildReportHTML(
     td.r { text-align: right; }
     td.c { text-align: center; }
     td.name { font-weight: 700; color: #111; }
+    td.dim { color: #999; }
     tr.tot td { font-weight: 800; background: #f8f8f8; color: #111; border-top: 2px solid #e5e5e5; border-bottom: none; }
+    .grp-sep { border-left: 2px solid #e0e0e0 !important; }
     .pos { color: #16a34a; font-weight: 700; }
     .neg { color: #dc2626; font-weight: 700; }
     .neu { color: #aaa; }
@@ -290,98 +292,169 @@ function buildReportHTML(
     `;
   }
 
-  // ── Cold Traffic page ─────────────────────────────────────────────────────
+  // ── Grouped-header comparison table helper ───────────────────────────────
 
-  function ctTable(d: any): string {
-    const reps = d?.reps ?? [];
-    const t = d?.totals;
-    return `
-      <table>
-        <thead><tr>
-          <th>Rep</th><th class="r">Calls</th><th class="r">Live Calls</th>
-          <th class="r">Offers</th><th class="r">Closes</th>
-          <th class="c">Show%</th><th class="c">Offer%</th><th class="c">Close%</th>
-        </tr></thead>
-        <tbody>
-          ${reps.map((r: any) => `
-            <tr>
-              <td class="name">${r.name}</td>
-              <td class="r">${r.calls}</td><td class="r">${r.liveCalls}</td>
-              <td class="r">${r.offers}</td><td class="r">${r.closes}</td>
-              <td class="c">${badge(r.showRate)}</td>
-              <td class="c">${badge(r.offerRate)}</td>
-              <td class="c">${badge(r.closeRate)}</td>
-            </tr>
-          `).join("")}
-          ${t ? `<tr class="tot">
-            <td>Team Total</td>
-            <td class="r">${t.calls}</td><td class="r">${t.liveCalls}</td>
-            <td class="r">${t.offers}</td><td class="r">${t.closes}</td>
-            <td class="c">${badge(t.showRate)}</td>
-            <td class="c">${badge(t.offerRate)}</td>
-            <td class="c">${badge(t.closeRate)}</td>
-          </tr>` : ""}
-        </tbody>
-      </table>
-    `;
+  function grpTh(label: string) {
+    return `<th colspan="3" class="c grp-sep">${label}</th>`;
+  }
+  function grpSubThs(align: "r" | "c") {
+    return `<th class="${align} grp-sep dim">${m2Label}</th><th class="${align}">${m1Label}</th><th class="c">±</th>`;
   }
 
+  // ── Cold Traffic page ─────────────────────────────────────────────────────
+
   function coldPage(pageNum: number, total: number): string {
+    const get = (ds: any, name: string) =>
+      name === "Team Total" ? ds?.totals : ds?.reps?.find((r: any) => r.name === name);
+    const names = [...(cold1?.reps?.map((r: any) => r.name) ?? []), "Team Total"];
+
+    const rows = names.map(name => {
+      const c = get(cold1, name) ?? { calls: 0, liveCalls: 0, closes: 0, showRate: null, closeRate: null };
+      const p = get(cold2, name) ?? { calls: 0, liveCalls: 0, closes: 0, showRate: null, closeRate: null };
+      const tot = name === "Team Total";
+      return `<tr${tot ? ' class="tot"' : ''}>
+        <td class="name">${name}</td>
+        <td class="r dim grp-sep">${p.calls}</td><td class="r">${c.calls}</td><td class="c">${diffHtml(c.calls, p.calls, "num")}</td>
+        <td class="r dim grp-sep">${p.liveCalls}</td><td class="r">${c.liveCalls}</td><td class="c">${diffHtml(c.liveCalls, p.liveCalls, "num")}</td>
+        <td class="r dim grp-sep">${p.closes}</td><td class="r">${c.closes}</td><td class="c">${diffHtml(c.closes, p.closes, "num")}</td>
+        <td class="c dim grp-sep">${pct(p.showRate)}</td><td class="c">${pct(c.showRate)}</td><td class="c">${diffHtml(c.showRate, p.showRate, "pct")}</td>
+        <td class="c dim grp-sep">${pct(p.closeRate)}</td><td class="c">${pct(c.closeRate)}</td><td class="c">${diffHtml(c.closeRate, p.closeRate, "pct")}</td>
+      </tr>`;
+    });
+
     return `
       ${hdr(`${m1Label} vs ${m2Label}`)}
       <div class="title">Cold Traffic Performance</div>
-      <div class="section-lbl">${m1Label}</div>
-      ${ctTable(cold1)}
-      <div class="section-lbl">${m2Label}</div>
-      ${ctTable(cold2)}
+      <table style="font-size:11px">
+        <thead>
+          <tr>
+            <th rowspan="2" style="vertical-align:bottom">Rep</th>
+            ${grpTh("Calls")}${grpTh("Live Calls")}${grpTh("Closes")}${grpTh("Show %")}${grpTh("Close %")}
+          </tr>
+          <tr>${grpSubThs("r")}${grpSubThs("r")}${grpSubThs("r")}${grpSubThs("c")}${grpSubThs("c")}</tr>
+        </thead>
+        <tbody>${rows.join("")}</tbody>
+      </table>
       ${footer(pageNum, total)}
     `;
   }
 
   // ── Setter → Closer pages ─────────────────────────────────────────────────
 
-  function sdrAETable(d: any): string {
-    const reps = d?.reps ?? [];
-    const t = d?.totals;
-    return `
-      <table>
-        <thead><tr>
-          <th>Rep</th><th class="r">Calls</th><th class="r">Mtg Sched</th>
-          <th class="r">Showed</th><th class="r">Offered</th><th class="r">Closes</th>
-          <th class="c">Show%</th><th class="c">Offer%</th><th class="c">Close%</th>
-        </tr></thead>
-        <tbody>
-          ${reps.map((r: any) => `
-            <tr>
-              <td class="name">${r.name}</td>
-              <td class="r">${r.scheduled}</td><td class="r">${r.meetingScheduled}</td>
-              <td class="r">${r.showed}</td><td class="r">${r.offered}</td><td class="r">${r.closes}</td>
-              <td class="c">${badge(r.showRate)}</td>
-              <td class="c">${badge(r.offerRate)}</td>
-              <td class="c">${badge(r.closeRate)}</td>
-            </tr>
-          `).join("")}
-          ${t ? `<tr class="tot">
-            <td>Team Total</td>
-            <td class="r">${t.scheduled}</td><td class="r">${t.meetingScheduled}</td>
-            <td class="r">${t.showed}</td><td class="r">${t.offered}</td><td class="r">${t.closes}</td>
-            <td class="c">${badge(t.showRate)}</td>
-            <td class="c">${badge(t.offerRate)}</td>
-            <td class="c">${badge(t.closeRate)}</td>
-          </tr>` : ""}
-        </tbody>
-      </table>
-    `;
-  }
-
   function setterCloserPage(hs1: any, hs2: any, setterName: string, pageNum: number, total: number): string {
+    const get = (ds: any, name: string) =>
+      name === "Team Total" ? ds?.totals : ds?.reps?.find((r: any) => r.name === name);
+    const names = [...(hs1?.reps?.map((r: any) => r.name) ?? []), "Team Total"];
+
+    const rows = names.map(name => {
+      const c = get(hs1, name) ?? { scheduled: 0, showed: 0, closes: 0, showRate: null, closeRate: null };
+      const p = get(hs2, name) ?? { scheduled: 0, showed: 0, closes: 0, showRate: null, closeRate: null };
+      const tot = name === "Team Total";
+      return `<tr${tot ? ' class="tot"' : ''}>
+        <td class="name">${name}</td>
+        <td class="r dim grp-sep">${p.scheduled}</td><td class="r">${c.scheduled}</td><td class="c">${diffHtml(c.scheduled, p.scheduled, "num")}</td>
+        <td class="r dim grp-sep">${p.showed}</td><td class="r">${c.showed}</td><td class="c">${diffHtml(c.showed, p.showed, "num")}</td>
+        <td class="r dim grp-sep">${p.closes}</td><td class="r">${c.closes}</td><td class="c">${diffHtml(c.closes, p.closes, "num")}</td>
+        <td class="c dim grp-sep">${pct(p.showRate)}</td><td class="c">${pct(c.showRate)}</td><td class="c">${diffHtml(c.showRate, p.showRate, "pct")}</td>
+        <td class="c dim grp-sep">${pct(p.closeRate)}</td><td class="c">${pct(c.closeRate)}</td><td class="c">${diffHtml(c.closeRate, p.closeRate, "pct")}</td>
+      </tr>`;
+    });
+
     return `
       ${hdr(`${m1Label} vs ${m2Label}`)}
       <div class="title">Setter → Closer: ${setterName}</div>
-      <div class="section-lbl">${m1Label}</div>
-      ${sdrAETable(hs1)}
-      <div class="section-lbl">${m2Label}</div>
-      ${sdrAETable(hs2)}
+      <table style="font-size:11px">
+        <thead>
+          <tr>
+            <th rowspan="2" style="vertical-align:bottom">Rep</th>
+            ${grpTh("Calls")}${grpTh("Showed")}${grpTh("Closes")}${grpTh("Show %")}${grpTh("Close %")}
+          </tr>
+          <tr>${grpSubThs("r")}${grpSubThs("r")}${grpSubThs("r")}${grpSubThs("c")}${grpSubThs("c")}</tr>
+        </thead>
+        <tbody>${rows.join("")}</tbody>
+      </table>
+      ${footer(pageNum, total)}
+    `;
+  }
+
+  // ── Cash Collected page ───────────────────────────────────────────────────
+
+  function cashPage(pageNum: number, total: number): string {
+    const names = ["All Team", ...(monthlyData?.current.reps.map((r) => r.name) ?? [])];
+    const zero = { cashCollected: 0, closes: 0, cashPerCall: null };
+
+    const rows = names.map(name => {
+      const c = name === "All Team" ? monthlyData?.current.totals ?? zero : monthlyData?.current.reps.find((r) => r.name === name) ?? zero;
+      const p = name === "All Team" ? monthlyData?.previous.totals ?? zero : monthlyData?.previous.reps.find((r) => r.name === name) ?? zero;
+      const tot = name === "All Team";
+      return `<tr${tot ? ' class="tot"' : ''}>
+        <td class="name">${name}</td>
+        <td class="r dim grp-sep">${$m(p.cashCollected)}</td><td class="r">${$m(c.cashCollected)}</td><td class="c">${diffHtml(c.cashCollected, p.cashCollected, "money")}</td>
+        <td class="r dim grp-sep">${p.closes}</td><td class="r">${c.closes}</td><td class="c">${diffHtml(c.closes, p.closes, "num")}</td>
+        <td class="r dim grp-sep">${$mOrDash(p.cashPerCall)}</td><td class="r">${$mOrDash(c.cashPerCall)}</td><td class="c">${diffHtml(c.cashPerCall, p.cashPerCall, "money")}</td>
+      </tr>`;
+    });
+
+    return `
+      ${hdr(`${m1Label} vs ${m2Label}`)}
+      <div class="title">Cash Collected</div>
+      <table>
+        <thead>
+          <tr>
+            <th rowspan="2" style="vertical-align:bottom">Rep</th>
+            ${grpTh("Cash Collected")}${grpTh("Closes")}${grpTh("Cash / Call")}
+          </tr>
+          <tr>${grpSubThs("r")}${grpSubThs("r")}${grpSubThs("r")}</tr>
+        </thead>
+        <tbody>${rows.join("")}</tbody>
+      </table>
+      ${footer(pageNum, total)}
+    `;
+  }
+
+  // ── Revenue / Call chart page (current month only) ────────────────────────
+
+  function revChartPage(pageNum: number, total: number): string {
+    const reps = monthlyData?.current.reps ?? [];
+    const tots = monthlyData?.current.totals as any;
+    const everyone: any[] = [
+      ...reps,
+      tots ? { name: "All Team", cashCollected: tots.cashCollected, scheduled: tots.scheduled, showed: tots.showed } : null,
+    ].filter(Boolean);
+
+    const data = everyone.map((r: any) => ({
+      name: r.name,
+      revPerCall: r.scheduled > 0 ? Math.round(r.cashCollected / r.scheduled) : 0,
+      revPerLiveCall: r.showed > 0 ? Math.round(r.cashCollected / r.showed) : 0,
+    }));
+
+    const maxCall = Math.max(...data.map(d => d.revPerCall), 1);
+    const maxLive = Math.max(...data.map(d => d.revPerLiveCall), 1);
+
+    const LBL_W = 80; const BAR_MAX = 360; const BAR_H = 28; const GAP = 10; const SVG_W = 560;
+    const n = data.length;
+    const secH = 26 + n * (BAR_H + GAP);
+
+    const section = (title: string, getter: (d: any) => number, maxVal: number, color: string, yOff: number) =>
+      `<text x="${LBL_W}" y="${yOff + 14}" font-size="12" font-weight="800" fill="#333" font-family="sans-serif">${title}</text>` +
+      data.map((d, i) => {
+        const w = Math.max(Math.round((getter(d) / maxVal) * BAR_MAX), 3);
+        const y = yOff + 22 + i * (BAR_H + GAP);
+        return `<text x="${LBL_W - 6}" y="${y + 19}" text-anchor="end" font-size="11" fill="#444" font-family="sans-serif">${d.name}</text>
+          <rect x="${LBL_W}" y="${y}" width="${w}" height="${BAR_H}" fill="${color}" rx="3" opacity="0.85"/>
+          <text x="${LBL_W + w + 6}" y="${y + 19}" font-size="11" font-weight="700" fill="#111" font-family="sans-serif">${$m(getter(d))}</text>`;
+      }).join("");
+
+    const svgH = secH * 2 + 30;
+    const svg = `<svg width="${SVG_W}" height="${svgH}" xmlns="http://www.w3.org/2000/svg" style="display:block;margin-top:16px">
+      ${section("Revenue per Call", d => d.revPerCall, maxCall, "#e53e1e", 0)}
+      ${section("Revenue per Live Call", d => d.revPerLiveCall, maxLive, "#2563eb", secH + 20)}
+    </svg>`;
+
+    return `
+      ${hdr(m1Label)}
+      <div class="title">Revenue per Call — ${m1Label}</div>
+      ${svg}
       ${footer(pageNum, total)}
     `;
   }
@@ -444,7 +517,7 @@ function buildReportHTML(
 
   // ── Assemble pages ────────────────────────────────────────────────────────
 
-  const total = closerNames.length + 5; // 5 non-closer pages
+  const total = closerNames.length + 7; // cold + 3×setter→closer + setter perf + cash + rev chart
 
   const numberedPages: string[] = [
     ...closerNames.map((name, i) => closerPage(name, i + 1, total)),
@@ -453,6 +526,8 @@ function buildReportHTML(
     setterCloserPage(hsAntwon1, hsAntwon2, "Antwon", closerNames.length + 3, total),
     setterCloserPage(hsNoah1,   hsNoah2,   "Noah",   closerNames.length + 4, total),
     setterPage(closerNames.length + 5, total),
+    cashPage(closerNames.length + 6, total),
+    revChartPage(closerNames.length + 7, total),
   ];
 
   const pages = numberedPages.map((content, i) =>
