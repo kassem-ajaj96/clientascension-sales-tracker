@@ -388,51 +388,56 @@ function buildReportHTML(
 
   // ── Setter Performance page ───────────────────────────────────────────────
 
-  function sdrTable(d: any): string {
-    const reps = d?.reps ?? [];
-    const t = d?.totals;
+  function setterCompTable(name: string): string {
+    const zero = { dials: 0, connects: 0, convo: 0, meetingsBooked: 0, connectionRate: null, connectToConvo: null, convoToBooking: null, dialToBooking: null };
+    const c = name === "Team Total"
+      ? (sdr1?.totals ?? zero)
+      : (sdr1?.reps?.find((r: any) => r.name === name) ?? zero);
+    const p = name === "Team Total"
+      ? (sdr2?.totals ?? zero)
+      : (sdr2?.reps?.find((r: any) => r.name === name) ?? zero);
+
+    const rows = [
+      ["Dials",           String(p.dials),           String(c.dials),           diffHtml(c.dials,           p.dials,           "num")],
+      ["Connects",        String(p.connects),        String(c.connects),        diffHtml(c.connects,        p.connects,        "num")],
+      ["Conversations",   String(p.convo),            String(c.convo),           diffHtml(c.convo,           p.convo,           "num")],
+      ["Meetings Booked", String(p.meetingsBooked),  String(c.meetingsBooked),  diffHtml(c.meetingsBooked,  p.meetingsBooked,  "num")],
+      ["Connection Rate", pct(p.connectionRate),     pct(c.connectionRate),     diffHtml(c.connectionRate,  p.connectionRate,  "pct")],
+      ["Connect → Convo", pct(p.connectToConvo),     pct(c.connectToConvo),     diffHtml(c.connectToConvo,  p.connectToConvo,  "pct")],
+      ["Convo → Booking", pct(p.convoToBooking),     pct(c.convoToBooking),     diffHtml(c.convoToBooking,  p.convoToBooking,  "pct")],
+      ["Dial → Booking",  pct(p.dialToBooking),      pct(c.dialToBooking),      diffHtml(c.dialToBooking,   p.dialToBooking,   "pct")],
+    ];
+
     return `
       <table>
         <thead><tr>
-          <th>Rep</th><th class="r">Dials</th><th class="r">Connects</th>
-          <th class="r">Convo</th><th class="r">Booked</th>
-          <th class="c">Connection%</th><th class="c">Connect→Convo%</th>
-          <th class="c">Convo→Book%</th><th class="c">Dial→Book%</th>
+          <th>Metric</th><th class="r">${m2Label}</th><th class="r">${m1Label}</th><th class="c">Growth</th>
         </tr></thead>
         <tbody>
-          ${reps.map((r: any) => `
+          ${rows.map(([lbl, pv, cv, d]) => `
             <tr>
-              <td class="name">${r.name}</td>
-              <td class="r">${r.dials}</td><td class="r">${r.connects}</td>
-              <td class="r">${r.convo}</td><td class="r">${r.meetingsBooked}</td>
-              <td class="c">${badge(r.connectionRate)}</td>
-              <td class="c">${badge(r.connectToConvo)}</td>
-              <td class="c">${badge(r.convoToBooking)}</td>
-              <td class="c">${badge(r.dialToBooking)}</td>
+              <td class="name">${lbl}</td>
+              <td class="r" style="color:#999">${pv}</td>
+              <td class="r"><strong>${cv}</strong></td>
+              <td class="c">${d}</td>
             </tr>
           `).join("")}
-          ${t ? `<tr class="tot">
-            <td>Team Total</td>
-            <td class="r">${t.dials}</td><td class="r">${t.connects}</td>
-            <td class="r">${t.convo}</td><td class="r">${t.meetingsBooked}</td>
-            <td class="c">${badge(t.connectionRate)}</td>
-            <td class="c">${badge(t.connectToConvo)}</td>
-            <td class="c">${badge(t.convoToBooking)}</td>
-            <td class="c">${badge(t.dialToBooking)}</td>
-          </tr>` : ""}
         </tbody>
       </table>
     `;
   }
 
   function setterPage(pageNum: number, total: number): string {
+    const names: string[] = sdr1?.reps?.map((r: any) => r.name) ?? ["Antwon", "Noah"];
     return `
       ${hdr(`${m1Label} vs ${m2Label}`)}
       <div class="title">Setter Performance</div>
-      <div class="section-lbl">${m1Label}</div>
-      ${sdrTable(sdr1)}
-      <div class="section-lbl">${m2Label}</div>
-      ${sdrTable(sdr2)}
+      ${names.map((name: string) => `
+        <div class="section-lbl">${name}</div>
+        ${setterCompTable(name)}
+      `).join("")}
+      <div class="section-lbl">Team Total</div>
+      ${setterCompTable("Team Total")}
       ${footer(pageNum, total)}
     `;
   }
@@ -511,29 +516,9 @@ export function MonthlyReportTab({
       const r1 = getMonthRange(month1);
       const r2 = getMonthRange(month2);
 
-      const fetchJSON = async (url: string) => {
-        const res = await fetch(url);
-        return res.ok ? res.json() : null;
-      };
-
-      const [
-        cold1, cold2,
-        sdr1, sdr2,
-        hsAll1, hsAll2,
-        hsAntwon1, hsAntwon2,
-        hsNoah1, hsNoah2,
-      ] = await Promise.all([
-        fetchJSON(`/api/cold-traffic?from=${r1.from}&to=${r1.to}`),
-        fetchJSON(`/api/cold-traffic?from=${r2.from}&to=${r2.to}`),
-        fetchJSON(`/api/sdr?from=${r1.from}&to=${r1.to}`),
-        fetchJSON(`/api/sdr?from=${r2.from}&to=${r2.to}`),
-        fetchJSON(`/api/hubspot?from=${r1.from}&to=${r1.to}`),
-        fetchJSON(`/api/hubspot?from=${r2.from}&to=${r2.to}`),
-        fetchJSON(`/api/hubspot?from=${r1.from}&to=${r1.to}&setter=Antwon`),
-        fetchJSON(`/api/hubspot?from=${r2.from}&to=${r2.to}&setter=Antwon`),
-        fetchJSON(`/api/hubspot?from=${r1.from}&to=${r1.to}&setter=Noah`),
-        fetchJSON(`/api/hubspot?from=${r2.from}&to=${r2.to}&setter=Noah`),
-      ]);
+      const res = await fetch(`/api/report-data?month1=${month1}&month2=${month2}`);
+      if (!res.ok) throw new Error(`Report data fetch failed: ${res.status}`);
+      const rd = await res.json();
 
       const generatedAt = new Date().toLocaleString("en-US", {
         month: "long", day: "numeric", year: "numeric",
@@ -542,11 +527,11 @@ export function MonthlyReportTab({
 
       const html = buildReportHTML(
         data, r1.label, r2.label,
-        cold1, cold2,
-        sdr1, sdr2,
-        hsAll1, hsAll2,
-        hsAntwon1, hsAntwon2,
-        hsNoah1, hsNoah2,
+        rd.cold1, rd.cold2,
+        rd.sdr1, rd.sdr2,
+        rd.hsAll1, rd.hsAll2,
+        rd.hsAntwon1, rd.hsAntwon2,
+        rd.hsNoah1, rd.hsNoah2,
         generatedAt
       );
 
