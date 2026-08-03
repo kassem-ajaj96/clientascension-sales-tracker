@@ -511,10 +511,10 @@ export function MonthlyReportTab({
       const r1 = getMonthRange(month1);
       const r2 = getMonthRange(month2);
 
-      async function fetchJSON(url: string) {
+      const fetchJSON = async (url: string) => {
         const res = await fetch(url);
         return res.ok ? res.json() : null;
-      }
+      };
 
       const [
         cold1, cold2,
