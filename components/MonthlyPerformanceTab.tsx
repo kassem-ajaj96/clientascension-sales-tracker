@@ -172,6 +172,11 @@ function buildReportHTML(
   monthlyData: MonthlyData | null,
   m1Label: string,
   m2Label: string,
+  cold1: any, cold2: any,
+  sdr1: any, sdr2: any,
+  hsAll1: any, hsAll2: any,
+  hsAntwon1: any, hsAntwon2: any,
+  hsNoah1: any, hsNoah2: any,
   generatedAt: string
 ): string {
   const pct = (v: number | null) => (v === null ? "—" : `${(v * 100).toFixed(1)}%`);
@@ -182,24 +187,31 @@ function buildReportHTML(
   const css = `
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: #111; background: white; }
-    .page { padding: 44px 40px 64px; page-break-after: always; position: relative; min-height: 100vh; }
+    .page { padding: 40px 40px 64px; page-break-after: always; position: relative; min-height: 100vh; }
     .page:last-child { page-break-after: avoid; }
-    .hdr { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #e53e1e; padding-bottom: 12px; margin-bottom: 26px; }
+    .hdr { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #e53e1e; padding-bottom: 12px; margin-bottom: 24px; }
     .brand { font-size: 15px; font-weight: 900; color: #e53e1e; letter-spacing: 0.08em; text-transform: uppercase; }
     .period { font-size: 12px; font-weight: 600; color: #555; }
-    .title { font-size: 20px; font-weight: 800; color: #111; margin-bottom: 20px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .title { font-size: 20px; font-weight: 800; color: #111; margin-bottom: 18px; }
+    .section-lbl { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid #e5e5e5; }
+    .section-lbl + table { margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
     thead { background: #f8f8f8; }
-    th { text-align: left; padding: 9px 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #555; border-bottom: 2px solid #e5e5e5; }
+    th { text-align: left; padding: 8px 10px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #555; border-bottom: 2px solid #e5e5e5; }
     th.r { text-align: right; }
     th.c { text-align: center; }
-    td { padding: 9px 12px; border-bottom: 1px solid #f0f0f0; color: #333; vertical-align: middle; }
+    td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; color: #333; vertical-align: middle; }
     td.r { text-align: right; }
     td.c { text-align: center; }
     td.name { font-weight: 700; color: #111; }
+    tr.tot td { font-weight: 800; background: #f8f8f8; color: #111; border-top: 2px solid #e5e5e5; border-bottom: none; }
     .pos { color: #16a34a; font-weight: 700; }
     .neg { color: #dc2626; font-weight: 700; }
     .neu { color: #aaa; }
+    .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+    .bg { background: #dcfce7; color: #16a34a; }
+    .br { background: #fee2e2; color: #dc2626; }
+    .bn { background: #f5f5f5; color: #888; }
     .footer { position: absolute; bottom: 20px; left: 40px; right: 40px; display: flex; justify-content: space-between; font-size: 10px; color: #aaa; border-top: 1px solid #e5e5e5; padding-top: 8px; }
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -216,6 +228,13 @@ function buildReportHTML(
     return `<div class="footer"><span>Generated ${generatedAt}</span><span>Page ${pageNum} of ${total}</span></div>`;
   }
 
+  function badge(v: number | null): string {
+    if (v === null) return `<span class="badge bn">—</span>`;
+    const pv = v * 100;
+    const cls = pv >= 50 ? "bg" : pv >= 25 ? "bn" : "br";
+    return `<span class="badge ${cls}">${pv.toFixed(1)}%</span>`;
+  }
+
   function diffHtml(c: number | null, prev: number | null, fmt: "num" | "pct" | "money"): string {
     if (c === null || prev === null) return '<span class="neu">—</span>';
     const diff = c - prev;
@@ -228,34 +247,25 @@ function buildReportHTML(
     return `<span class="${cls}">${display}</span>`;
   }
 
-  // All Team + individual closers pulled from data
-  const closerNames = ["All Team", ...(monthlyData?.current.reps.map((r) => r.name) ?? [])];
-  const total = closerNames.length;
+  // ── Closer pages ──────────────────────────────────────────────────────────
 
-  function closerPage(name: string, pageNum: number): string {
-    const zeroStats = {
-      scheduled: 0, showed: 0, offered: 0, closes: 0, cashCollected: 0,
-      cashPerCall: null, showRate: null, offerRate: null, closeRate: null,
-    };
-    const curr =
-      name === "All Team"
-        ? monthlyData?.current.totals ?? zeroStats
-        : monthlyData?.current.reps.find((r) => r.name === name) ?? zeroStats;
-    const prev =
-      name === "All Team"
-        ? monthlyData?.previous.totals ?? zeroStats
-        : monthlyData?.previous.reps.find((r) => r.name === name) ?? zeroStats;
+  const closerNames = ["All Team", ...(monthlyData?.current.reps.map((r) => r.name) ?? [])];
+
+  function closerPage(name: string, pageNum: number, total: number): string {
+    const zero = { scheduled: 0, showed: 0, offered: 0, closes: 0, cashCollected: 0, cashPerCall: null, showRate: null, offerRate: null, closeRate: null };
+    const c = name === "All Team" ? monthlyData?.current.totals ?? zero : monthlyData?.current.reps.find((r) => r.name === name) ?? zero;
+    const p = name === "All Team" ? monthlyData?.previous.totals ?? zero : monthlyData?.previous.reps.find((r) => r.name === name) ?? zero;
 
     const rows = [
-      ["Calls",          String(prev.scheduled),    String(curr.scheduled),    diffHtml(curr.scheduled,    prev.scheduled,    "num")],
-      ["Shows",          String(prev.showed),        String(curr.showed),        diffHtml(curr.showed,        prev.showed,        "num")],
-      ["Offers",         String(prev.offered),       String(curr.offered),       diffHtml(curr.offered,       prev.offered,       "num")],
-      ["Closes",         String(prev.closes),        String(curr.closes),        diffHtml(curr.closes,        prev.closes,        "num")],
-      ["Cash Collected", $m(prev.cashCollected),     $m(curr.cashCollected),     diffHtml(curr.cashCollected, prev.cashCollected, "money")],
-      ["Cash/Call",      $mOrDash(prev.cashPerCall), $mOrDash(curr.cashPerCall), diffHtml(curr.cashPerCall,   prev.cashPerCall,   "money")],
-      ["Show Rate",      pct(prev.showRate),          pct(curr.showRate),          diffHtml(curr.showRate,      prev.showRate,      "pct")],
-      ["Offer Rate",     pct(prev.offerRate),         pct(curr.offerRate),         diffHtml(curr.offerRate,     prev.offerRate,     "pct")],
-      ["Close Rate",     pct(prev.closeRate),         pct(curr.closeRate),         diffHtml(curr.closeRate,     prev.closeRate,     "pct")],
+      ["Calls",          String(p.scheduled),    String(c.scheduled),    diffHtml(c.scheduled,    p.scheduled,    "num")],
+      ["Shows",          String(p.showed),        String(c.showed),        diffHtml(c.showed,        p.showed,        "num")],
+      ["Offers",         String(p.offered),       String(c.offered),       diffHtml(c.offered,       p.offered,       "num")],
+      ["Closes",         String(p.closes),        String(c.closes),        diffHtml(c.closes,        p.closes,        "num")],
+      ["Cash Collected", $m(p.cashCollected),     $m(c.cashCollected),     diffHtml(c.cashCollected, p.cashCollected, "money")],
+      ["Cash/Call",      $mOrDash(p.cashPerCall), $mOrDash(c.cashPerCall), diffHtml(c.cashPerCall,   p.cashPerCall,   "money")],
+      ["Show Rate",      pct(p.showRate),          pct(c.showRate),          diffHtml(c.showRate,      p.showRate,      "pct")],
+      ["Offer Rate",     pct(p.offerRate),         pct(c.offerRate),         diffHtml(c.offerRate,     p.offerRate,     "pct")],
+      ["Close Rate",     pct(p.closeRate),         pct(c.closeRate),         diffHtml(c.closeRate,     p.closeRate,     "pct")],
     ];
 
     return `
@@ -263,10 +273,7 @@ function buildReportHTML(
       <div class="title">Closer Performance — ${name}</div>
       <table>
         <thead><tr>
-          <th>Metric</th>
-          <th class="r">${m2Label}</th>
-          <th class="r">${m1Label}</th>
-          <th class="c">Growth</th>
+          <th>Metric</th><th class="r">${m2Label}</th><th class="r">${m1Label}</th><th class="c">Growth</th>
         </tr></thead>
         <tbody>
           ${rows.map(([lbl, pv, cv, d]) => `
@@ -283,8 +290,168 @@ function buildReportHTML(
     `;
   }
 
-  const pages = closerNames.map((name, i) =>
-    `<div class="page"${i === closerNames.length - 1 ? ' style="page-break-after:avoid"' : ""}>${closerPage(name, i + 1)}</div>`
+  // ── Cold Traffic page ─────────────────────────────────────────────────────
+
+  function ctTable(d: any): string {
+    const reps = d?.reps ?? [];
+    const t = d?.totals;
+    return `
+      <table>
+        <thead><tr>
+          <th>Rep</th><th class="r">Calls</th><th class="r">Live Calls</th>
+          <th class="r">Offers</th><th class="r">Closes</th>
+          <th class="c">Show%</th><th class="c">Offer%</th><th class="c">Close%</th>
+        </tr></thead>
+        <tbody>
+          ${reps.map((r: any) => `
+            <tr>
+              <td class="name">${r.name}</td>
+              <td class="r">${r.calls}</td><td class="r">${r.liveCalls}</td>
+              <td class="r">${r.offers}</td><td class="r">${r.closes}</td>
+              <td class="c">${badge(r.showRate)}</td>
+              <td class="c">${badge(r.offerRate)}</td>
+              <td class="c">${badge(r.closeRate)}</td>
+            </tr>
+          `).join("")}
+          ${t ? `<tr class="tot">
+            <td>Team Total</td>
+            <td class="r">${t.calls}</td><td class="r">${t.liveCalls}</td>
+            <td class="r">${t.offers}</td><td class="r">${t.closes}</td>
+            <td class="c">${badge(t.showRate)}</td>
+            <td class="c">${badge(t.offerRate)}</td>
+            <td class="c">${badge(t.closeRate)}</td>
+          </tr>` : ""}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function coldPage(pageNum: number, total: number): string {
+    return `
+      ${hdr(`${m1Label} vs ${m2Label}`)}
+      <div class="title">Cold Traffic Performance</div>
+      <div class="section-lbl">${m1Label}</div>
+      ${ctTable(cold1)}
+      <div class="section-lbl">${m2Label}</div>
+      ${ctTable(cold2)}
+      ${footer(pageNum, total)}
+    `;
+  }
+
+  // ── Setter → Closer pages ─────────────────────────────────────────────────
+
+  function sdrAETable(d: any): string {
+    const reps = d?.reps ?? [];
+    const t = d?.totals;
+    return `
+      <table>
+        <thead><tr>
+          <th>Rep</th><th class="r">Calls</th><th class="r">Mtg Sched</th>
+          <th class="r">Showed</th><th class="r">Offered</th><th class="r">Closes</th>
+          <th class="c">Show%</th><th class="c">Offer%</th><th class="c">Close%</th>
+        </tr></thead>
+        <tbody>
+          ${reps.map((r: any) => `
+            <tr>
+              <td class="name">${r.name}</td>
+              <td class="r">${r.scheduled}</td><td class="r">${r.meetingScheduled}</td>
+              <td class="r">${r.showed}</td><td class="r">${r.offered}</td><td class="r">${r.closes}</td>
+              <td class="c">${badge(r.showRate)}</td>
+              <td class="c">${badge(r.offerRate)}</td>
+              <td class="c">${badge(r.closeRate)}</td>
+            </tr>
+          `).join("")}
+          ${t ? `<tr class="tot">
+            <td>Team Total</td>
+            <td class="r">${t.scheduled}</td><td class="r">${t.meetingScheduled}</td>
+            <td class="r">${t.showed}</td><td class="r">${t.offered}</td><td class="r">${t.closes}</td>
+            <td class="c">${badge(t.showRate)}</td>
+            <td class="c">${badge(t.offerRate)}</td>
+            <td class="c">${badge(t.closeRate)}</td>
+          </tr>` : ""}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function setterCloserPage(hs1: any, hs2: any, setterName: string, pageNum: number, total: number): string {
+    return `
+      ${hdr(`${m1Label} vs ${m2Label}`)}
+      <div class="title">Setter → Closer: ${setterName}</div>
+      <div class="section-lbl">${m1Label}</div>
+      ${sdrAETable(hs1)}
+      <div class="section-lbl">${m2Label}</div>
+      ${sdrAETable(hs2)}
+      ${footer(pageNum, total)}
+    `;
+  }
+
+  // ── Setter Performance page ───────────────────────────────────────────────
+
+  function sdrTable(d: any): string {
+    const reps = d?.reps ?? [];
+    const t = d?.totals;
+    return `
+      <table>
+        <thead><tr>
+          <th>Rep</th><th class="r">Dials</th><th class="r">Connects</th>
+          <th class="r">Convo</th><th class="r">Booked</th>
+          <th class="c">Connection%</th><th class="c">Connect→Convo%</th>
+          <th class="c">Convo→Book%</th><th class="c">Dial→Book%</th>
+        </tr></thead>
+        <tbody>
+          ${reps.map((r: any) => `
+            <tr>
+              <td class="name">${r.name}</td>
+              <td class="r">${r.dials}</td><td class="r">${r.connects}</td>
+              <td class="r">${r.convo}</td><td class="r">${r.meetingsBooked}</td>
+              <td class="c">${badge(r.connectionRate)}</td>
+              <td class="c">${badge(r.connectToConvo)}</td>
+              <td class="c">${badge(r.convoToBooking)}</td>
+              <td class="c">${badge(r.dialToBooking)}</td>
+            </tr>
+          `).join("")}
+          ${t ? `<tr class="tot">
+            <td>Team Total</td>
+            <td class="r">${t.dials}</td><td class="r">${t.connects}</td>
+            <td class="r">${t.convo}</td><td class="r">${t.meetingsBooked}</td>
+            <td class="c">${badge(t.connectionRate)}</td>
+            <td class="c">${badge(t.connectToConvo)}</td>
+            <td class="c">${badge(t.convoToBooking)}</td>
+            <td class="c">${badge(t.dialToBooking)}</td>
+          </tr>` : ""}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function setterPage(pageNum: number, total: number): string {
+    return `
+      ${hdr(`${m1Label} vs ${m2Label}`)}
+      <div class="title">Setter Performance</div>
+      <div class="section-lbl">${m1Label}</div>
+      ${sdrTable(sdr1)}
+      <div class="section-lbl">${m2Label}</div>
+      ${sdrTable(sdr2)}
+      ${footer(pageNum, total)}
+    `;
+  }
+
+  // ── Assemble pages ────────────────────────────────────────────────────────
+
+  const total = closerNames.length + 5; // 5 non-closer pages
+
+  const numberedPages: string[] = [
+    ...closerNames.map((name, i) => closerPage(name, i + 1, total)),
+    coldPage(closerNames.length + 1, total),
+    setterCloserPage(hsAll1,    hsAll2,    "All",    closerNames.length + 2, total),
+    setterCloserPage(hsAntwon1, hsAntwon2, "Antwon", closerNames.length + 3, total),
+    setterCloserPage(hsNoah1,   hsNoah2,   "Noah",   closerNames.length + 4, total),
+    setterPage(closerNames.length + 5, total),
+  ];
+
+  const pages = numberedPages.map((content, i) =>
+    `<div class="page"${i === numberedPages.length - 1 ? ' style="page-break-after:avoid"' : ""}>${content}</div>`
   );
 
   return `<!DOCTYPE html>
@@ -341,13 +508,48 @@ export function MonthlyReportTab({
   async function generateReport() {
     setGenerating(true);
     try {
-      const { label: m1Label } = getMonthRange(month1);
-      const m2Label = getMonthRange(month2).label;
+      const r1 = getMonthRange(month1);
+      const r2 = getMonthRange(month2);
+
+      async function fetchJSON(url: string) {
+        const res = await fetch(url);
+        return res.ok ? res.json() : null;
+      }
+
+      const [
+        cold1, cold2,
+        sdr1, sdr2,
+        hsAll1, hsAll2,
+        hsAntwon1, hsAntwon2,
+        hsNoah1, hsNoah2,
+      ] = await Promise.all([
+        fetchJSON(`/api/cold-traffic?from=${r1.from}&to=${r1.to}`),
+        fetchJSON(`/api/cold-traffic?from=${r2.from}&to=${r2.to}`),
+        fetchJSON(`/api/sdr?from=${r1.from}&to=${r1.to}`),
+        fetchJSON(`/api/sdr?from=${r2.from}&to=${r2.to}`),
+        fetchJSON(`/api/hubspot?from=${r1.from}&to=${r1.to}`),
+        fetchJSON(`/api/hubspot?from=${r2.from}&to=${r2.to}`),
+        fetchJSON(`/api/hubspot?from=${r1.from}&to=${r1.to}&setter=Antwon`),
+        fetchJSON(`/api/hubspot?from=${r2.from}&to=${r2.to}&setter=Antwon`),
+        fetchJSON(`/api/hubspot?from=${r1.from}&to=${r1.to}&setter=Noah`),
+        fetchJSON(`/api/hubspot?from=${r2.from}&to=${r2.to}&setter=Noah`),
+      ]);
+
       const generatedAt = new Date().toLocaleString("en-US", {
         month: "long", day: "numeric", year: "numeric",
         hour: "numeric", minute: "2-digit",
       });
-      const html = buildReportHTML(data, m1Label, m2Label, generatedAt);
+
+      const html = buildReportHTML(
+        data, r1.label, r2.label,
+        cold1, cold2,
+        sdr1, sdr2,
+        hsAll1, hsAll2,
+        hsAntwon1, hsAntwon2,
+        hsNoah1, hsNoah2,
+        generatedAt
+      );
+
       const win = window.open("", "_blank");
       if (win) {
         win.document.write(html);
