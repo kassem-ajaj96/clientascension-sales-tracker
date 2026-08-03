@@ -88,11 +88,12 @@ export async function GET(req: NextRequest) {
   const r2 = getMonthRange(month2);
 
   try {
-    // 2 HubSpot calls (each fetches all deals once, filters both months in-memory)
-    // + 2 Google Sheets calls for SDR — all run in parallel
-    const [cold, hs, sdr1, sdr2] = await Promise.all([
-      getHubSpotColdTrafficReportData(r1.from, r1.to, r2.from, r2.to),
-      getHubSpotAllReportData(r1.from, r1.to, r2.from, r2.to),
+    // HubSpot calls run sequentially to stay under the per-second rate limit.
+    // Each paginates through many pages; running them in parallel fires too many
+    // requests at once and triggers a 429. SDR is Google Sheets so it's safe in parallel.
+    const cold = await getHubSpotColdTrafficReportData(r1.from, r1.to, r2.from, r2.to);
+    const hs   = await getHubSpotAllReportData(r1.from, r1.to, r2.from, r2.to);
+    const [sdr1, sdr2] = await Promise.all([
       getSDRData(r1.from, r1.to),
       getSDRData(r2.from, r2.to),
     ]);

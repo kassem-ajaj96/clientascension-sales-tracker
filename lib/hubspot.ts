@@ -29,7 +29,9 @@ function isOffered(stage: string, closedLostCause: string): boolean {
   return false;
 }
 
-async function hs(path: string, options: RequestInit = {}) {
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function hs(path: string, options: RequestInit = {}, retries = 3): Promise<any> {
   const token = process.env.HUBSPOT_ACCESS_TOKEN;
   if (!token) throw new Error("HUBSPOT_ACCESS_TOKEN is not set");
   const res = await fetch(`${BASE}${path}`, {
@@ -40,6 +42,11 @@ async function hs(path: string, options: RequestInit = {}) {
       ...(options.headers || {}),
     },
   });
+  if (res.status === 429 && retries > 0) {
+    // HubSpot secondly limit — wait 1.2s then retry
+    await sleep(1200);
+    return hs(path, options, retries - 1);
+  }
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`HubSpot ${res.status}: ${text}`);
