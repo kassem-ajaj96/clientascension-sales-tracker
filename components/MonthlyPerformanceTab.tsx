@@ -511,13 +511,31 @@ export function MonthlyReportTab({
       : [];
 
   async function generateReport() {
+    // Open the window synchronously (must happen before any await or browsers block it as a popup)
+    const win = window.open("", "_blank");
+    if (!win) {
+      alert("Please allow popups for this site, then try again.");
+      return;
+    }
+    win.document.write(`<!DOCTYPE html><html><body style="font-family:sans-serif;padding:48px;color:#555">
+      <p style="font-size:18px">Loading report data&hellip;</p>
+      <p style="font-size:13px;margin-top:8px">This may take 15–30 seconds while fetching HubSpot data.</p>
+    </body></html>`);
+    win.document.close();
+
     setGenerating(true);
     try {
       const r1 = getMonthRange(month1);
       const r2 = getMonthRange(month2);
 
       const res = await fetch(`/api/report-data?month1=${month1}&month2=${month2}`);
-      if (!res.ok) throw new Error(`Report data fetch failed: ${res.status}`);
+      if (!res.ok) {
+        const msg = `API error ${res.status}: ${await res.text()}`;
+        win.document.open();
+        win.document.write(`<!DOCTYPE html><html><body style="font-family:sans-serif;padding:48px;color:#c00"><b>Failed to load report data</b><pre style="margin-top:12px;font-size:12px">${msg}</pre></body></html>`);
+        win.document.close();
+        return;
+      }
       const rd = await res.json();
 
       const generatedAt = new Date().toLocaleString("en-US", {
@@ -535,14 +553,15 @@ export function MonthlyReportTab({
         generatedAt
       );
 
-      const win = window.open("", "_blank");
-      if (win) {
-        win.document.write(html);
-        win.document.close();
-        win.focus();
-      }
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
     } catch (err) {
       console.error("Report generation failed:", err);
+      win.document.open();
+      win.document.write(`<!DOCTYPE html><html><body style="font-family:sans-serif;padding:48px;color:#c00"><b>Report generation failed</b><pre style="margin-top:12px;font-size:12px">${String(err)}</pre></body></html>`);
+      win.document.close();
     } finally {
       setGenerating(false);
     }
