@@ -451,6 +451,63 @@ export async function getHubSpotAllReportData(
   };
 }
 
+// ── Follow-up closes & demo-scheduled queries ─────────────────────────────────
+
+export async function getFollowupClosesData(from: string, to: string) {
+  const fromMs = new Date(from).getTime();
+  const toMs   = new Date(`${to}T23:59:59`).getTime();
+
+  const [deals, ownerMap] = await Promise.all([
+    searchDeals(null, [
+      { propertyName: "dealstage", operator: "EQ",  value: CLOSED_WON },
+      { propertyName: "closedate", operator: "GTE", value: String(fromMs) },
+      { propertyName: "closedate", operator: "LTE", value: String(toMs)  },
+    ], ["setter", "dealstage", "hubspot_owner_id", "aiaa_call_scheduled", "closedate"]),
+    buildOwnerMap(),
+  ]);
+
+  const counts: Record<string, number> = Object.fromEntries(AE_NAMES.map(n => [n, 0]));
+
+  for (const deal of deals) {
+    const { hubspot_owner_id, aiaa_call_scheduled } = deal.properties;
+    if (!aiaa_call_scheduled) continue;
+    const callMs = new Date(aiaa_call_scheduled).getTime();
+    if (isNaN(callMs) || callMs >= fromMs) continue; // call happened within or after the period — not a follow-up
+    const ae = ownerMap[hubspot_owner_id];
+    if (!ae || !(ae in counts)) continue;
+    counts[ae]++;
+  }
+
+  const reps = AE_NAMES.map(name => ({ name, count: counts[name] ?? 0 }));
+  return { reps, total: reps.reduce((s, r) => s + r.count, 0) };
+}
+
+export async function getDemoScheduledData(from: string, to: string) {
+  const fromMs = new Date(from).getTime();
+  const toMs   = new Date(`${to}T23:59:59`).getTime();
+
+  const [deals, ownerMap] = await Promise.all([
+    searchDeals(null, [], ["setter", "dealstage", "hubspot_owner_id", "aiaa_call_scheduled"]),
+    buildOwnerMap(),
+  ]);
+
+  const counts: Record<string, number> = Object.fromEntries(AE_NAMES.map(n => [n, 0]));
+
+  for (const deal of deals) {
+    const { dealstage, hubspot_owner_id, aiaa_call_scheduled } = deal.properties;
+    if (dealstage !== MEETING_SCHEDULED) continue;
+    if (!aiaa_call_scheduled) continue;
+    const callMs = new Date(aiaa_call_scheduled).getTime();
+    if (isNaN(callMs) || callMs < fromMs || callMs > toMs) continue;
+    const ae = ownerMap[hubspot_owner_id];
+    if (!ae || !(ae in counts)) continue;
+    counts[ae]++;
+  }
+
+  const reps = AE_NAMES.map(name => ({ name, count: counts[name] ?? 0 }));
+  return { reps, total: reps.reduce((s, r) => s + r.count, 0) };
+}
+
 // ── SDR → AE ──────────────────────────────────────────────────────────────────
 
 function buildResponse(stats: Record<string, AEStats>) {

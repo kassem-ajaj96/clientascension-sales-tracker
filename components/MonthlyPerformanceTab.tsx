@@ -556,19 +556,28 @@ function buildReportHTML(
 // Component
 // ---------------------------------------------------------------------------
 
-export function MonthlyReportTab({
+export function AnalysisTab({
   data,
   loading,
   onMonthChange,
+  from,
+  to,
 }: {
   data: MonthlyData | null;
   loading: boolean;
   onMonthChange: (month1: string, month2: string) => void;
+  from: string;
+  to: string;
 }) {
+  const [activeView, setActiveView] = useState<"report" | "followup" | "demo" | null>(null);
   const [activeRep, setActiveRep] = useState<AEName>("All Team");
   const [month1, setMonth1] = useState(currentYearMonth);
   const [month2, setMonth2] = useState(() => prevYearMonth(currentYearMonth()));
   const [generating, setGenerating] = useState(false);
+  const [followupData, setFollowupData] = useState<any>(null);
+  const [followupLoading, setFollowupLoading] = useState(false);
+  const [demoData, setDemoData] = useState<any>(null);
+  const [demoLoading, setDemoLoading] = useState(false);
 
   function handleMonth1Change(val: string) {
     setMonth1(val);
@@ -580,10 +589,35 @@ export function MonthlyReportTab({
     onMonthChange(month1, val);
   }
 
-  const rows =
-    data
-      ? buildRows(getStats(data.current, activeRep), getStats(data.previous, activeRep))
-      : [];
+  const rows = data
+    ? buildRows(getStats(data.current, activeRep), getStats(data.previous, activeRep))
+    : [];
+
+  async function fetchFollowup() {
+    setFollowupLoading(true);
+    try {
+      const res = await fetch(`/api/followup-closes?from=${from}&to=${to}`);
+      if (res.ok) setFollowupData(await res.json());
+    } finally {
+      setFollowupLoading(false);
+    }
+  }
+
+  async function fetchDemo() {
+    setDemoLoading(true);
+    try {
+      const res = await fetch(`/api/demo-scheduled?from=${from}&to=${to}`);
+      if (res.ok) setDemoData(await res.json());
+    } finally {
+      setDemoLoading(false);
+    }
+  }
+
+  function selectView(v: "report" | "followup" | "demo") {
+    setActiveView(v);
+    if (v === "followup") fetchFollowup();
+    if (v === "demo") fetchDemo();
+  }
 
   async function generateReport() {
     // Open the window synchronously (must happen before any await or browsers block it as a popup)
@@ -642,130 +676,191 @@ export function MonthlyReportTab({
     }
   }
 
+  const OPTION_CARDS = [
+    { id: "report"  as const, title: "Monthly Report",    desc: "Generate PDF comparison between two months" },
+    { id: "followup" as const, title: "Follow-up Closes", desc: "Closes where the call was made in a prior period" },
+    { id: "demo"    as const, title: "Demo Scheduled",    desc: "Deals still in demo scheduled stage this period" },
+  ];
+
+  function SimpleTable({ colA, colB, rows, total }: { colA: string; colB: string; rows: {name: string; count: number}[]; total: number }) {
+    return (
+      <div className="bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-[#1e1e1e] text-gray-500 text-xs uppercase tracking-wide">
+              <th className="text-left px-5 py-3 font-bold">{colA}</th>
+              <th className="text-right px-5 py-3 font-bold">{colB}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={r.name} className={`border-b border-[#111] hover:bg-[#111] ${i === rows.length - 1 ? "border-b-0" : ""}`}>
+                <td className="px-5 py-3 font-bold text-white">{r.name}</td>
+                <td className="px-5 py-3 text-right font-bold text-white">{r.count}</td>
+              </tr>
+            ))}
+            <tr className="border-t-2 border-[#2a2a2a] bg-[#0a0a0a]">
+              <td className="px-5 py-3 font-bold text-[#e53e1e]">Team Total</td>
+              <td className="px-5 py-3 text-right font-bold text-[#e53e1e]">{total}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 sm:p-6">
       <div className="space-y-5 w-full">
-        {/* Rep selector */}
-        <div className="flex gap-2 flex-wrap">
-          {AES.map((rep) => (
+
+        {/* ── Option cards ─────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {OPTION_CARDS.map(({ id, title, desc }) => (
             <button
-              key={rep}
-              onClick={() => setActiveRep(rep)}
-              className={`px-4 py-1.5 rounded text-sm font-bold transition-colors ${
-                activeRep === rep
-                  ? "bg-[#e53e1e] text-white"
-                  : "bg-[#111] text-gray-500 hover:text-gray-200 border border-[#2a2a2a]"
+              key={id}
+              onClick={() => selectView(id)}
+              className={`text-left p-4 rounded-lg border transition-all ${
+                activeView === id
+                  ? "bg-[#1a0a06] border-[#e53e1e]"
+                  : "bg-[#0d0d0d] border-[#1e1e1e] hover:border-[#3a3a3a]"
               }`}
             >
-              {rep}
+              <div className="font-bold text-sm mb-1 text-white">{title}</div>
+              <div className="text-xs text-gray-500">{desc}</div>
             </button>
           ))}
         </div>
 
-        {/* Month pickers + Generate button */}
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Month 1</span>
-            <select
-              value={month1}
-              onChange={(e) => handleMonth1Change(e.target.value)}
-              className="bg-[#111] border border-[#2a2a2a] text-white text-sm font-bold rounded px-3 py-1.5 [color-scheme:dark] cursor-pointer"
-            >
-              {MONTH_OPTIONS.map(({ value, label }) => (
-                <option key={value} value={value}>{label}</option>
+        {/* ── Monthly Report view ───────────────────────────────────── */}
+        {activeView === "report" && (
+          <div className="space-y-5">
+            <div className="flex gap-2 flex-wrap">
+              {AES.map((rep) => (
+                <button
+                  key={rep}
+                  onClick={() => setActiveRep(rep)}
+                  className={`px-4 py-1.5 rounded text-sm font-bold transition-colors ${
+                    activeRep === rep
+                      ? "bg-[#e53e1e] text-white"
+                      : "bg-[#111] text-gray-500 hover:text-gray-200 border border-[#2a2a2a]"
+                  }`}
+                >
+                  {rep}
+                </button>
               ))}
-            </select>
-          </div>
-          <span className="text-gray-600 font-bold mt-5">vs</span>
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Month 2</span>
-            <select
-              value={month2}
-              onChange={(e) => handleMonth2Change(e.target.value)}
-              className="bg-[#111] border border-[#2a2a2a] text-white text-sm font-bold rounded px-3 py-1.5 [color-scheme:dark] cursor-pointer"
-            >
-              {MONTH_OPTIONS.map(({ value, label }) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-          </div>
+            </div>
 
-          <div className="mt-5">
-            <button
-              onClick={generateReport}
-              disabled={generating || loading || !data}
-              className={`px-5 py-1.5 rounded text-sm font-bold transition-colors flex items-center gap-2 ${
-                generating || loading || !data
-                  ? "bg-[#1a1a1a] text-gray-600 cursor-not-allowed border border-[#2a2a2a]"
-                  : "bg-[#e53e1e] text-white hover:bg-[#cc3519]"
-              }`}
-            >
-              {generating ? (
-                <>
-                  <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Generating...
-                </>
-              ) : (
-                "Generate Monthly Report"
-              )}
-            </button>
-          </div>
-        </div>
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Month 1</span>
+                <select
+                  value={month1}
+                  onChange={(e) => handleMonth1Change(e.target.value)}
+                  className="bg-[#111] border border-[#2a2a2a] text-white text-sm font-bold rounded px-3 py-1.5 [color-scheme:dark] cursor-pointer"
+                >
+                  {MONTH_OPTIONS.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </div>
+              <span className="text-gray-600 font-bold mt-5">vs</span>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Month 2</span>
+                <select
+                  value={month2}
+                  onChange={(e) => handleMonth2Change(e.target.value)}
+                  className="bg-[#111] border border-[#2a2a2a] text-white text-sm font-bold rounded px-3 py-1.5 [color-scheme:dark] cursor-pointer"
+                >
+                  {MONTH_OPTIONS.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="mt-5">
+                <button
+                  onClick={generateReport}
+                  disabled={generating || loading || !data}
+                  className={`px-5 py-1.5 rounded text-sm font-bold transition-colors flex items-center gap-2 ${
+                    generating || loading || !data
+                      ? "bg-[#1a1a1a] text-gray-600 cursor-not-allowed border border-[#2a2a2a]"
+                      : "bg-[#e53e1e] text-white hover:bg-[#cc3519]"
+                  }`}
+                >
+                  {generating ? (
+                    <>
+                      <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Generating...
+                    </>
+                  ) : "Generate Monthly Report"}
+                </button>
+              </div>
+            </div>
 
-        {loading && (
-          <div className="text-center text-gray-500 py-10 text-sm">Loading...</div>
+            {loading && <div className="text-center text-gray-500 py-10 text-sm">Loading...</div>}
+
+            {!loading && data && (
+              <div className="bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#1e1e1e] text-gray-500 text-xs uppercase tracking-wide">
+                      <th className="text-left px-5 py-3 font-bold">Metric</th>
+                      <th className="text-right px-5 py-3 font-bold text-white">
+                        {data.current.label}
+                  </th>
+                      <th className="text-right px-5 py-3 font-bold">{data.previous.label}</th>
+                      <th className="text-center px-5 py-3 font-bold">Growth</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row, i) => (
+                      <tr key={row.label} className={`border-b border-[#111] hover:bg-[#111] transition-colors ${i === rows.length - 1 ? "border-b-0" : ""}`}>
+                        <td className="px-5 py-3 font-bold text-gray-400">{row.label}</td>
+                        <td className="px-5 py-3 text-right font-bold text-white">{row.currDisplay}</td>
+                        <td className="px-5 py-3 text-right font-bold text-gray-500">{row.prevDisplay}</td>
+                        <td className={`px-5 py-3 text-center font-bold ${
+                          row.diff === null || row.diff === 0 ? "text-gray-600"
+                          : row.diff > 0 ? "text-green-400" : "text-red-400"
+                        }`}>
+                          {row.diffDisplay ?? "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         )}
 
-        {!loading && data && (
-          <div className="bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#1e1e1e] text-gray-500 text-xs uppercase tracking-wide">
-                  <th className="text-left px-5 py-3 font-bold">Metric</th>
-                  <th className="text-right px-5 py-3 font-bold text-white">
-                    {data.current.label}
-                  </th>
-                  <th className="text-right px-5 py-3 font-bold">
-                    {data.previous.label}
-                  </th>
-                  <th className="text-center px-5 py-3 font-bold">Growth</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, i) => (
-                  <tr
-                    key={row.label}
-                    className={`border-b border-[#111] hover:bg-[#111] transition-colors ${
-                      i === rows.length - 1 ? "border-b-0" : ""
-                    }`}
-                  >
-                    <td className="px-5 py-3 font-bold text-gray-400">{row.label}</td>
-                    <td className="px-5 py-3 text-right font-bold text-white">
-                      {row.currDisplay}
-                    </td>
-                    <td className="px-5 py-3 text-right font-bold text-gray-500">
-                      {row.prevDisplay}
-                    </td>
-                    <td
-                      className={`px-5 py-3 text-center font-bold ${
-                        row.diff === null || row.diff === 0
-                          ? "text-gray-600"
-                          : row.diff > 0
-                          ? "text-green-400"
-                          : "text-red-400"
-                      }`}
-                    >
-                      {row.diffDisplay ?? "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* ── Follow-up Closes view ─────────────────────────────────── */}
+        {activeView === "followup" && (
+          <div className="space-y-3">
+            <p className="text-xs text-gray-500">
+              Deals closed within the selected date range where the original call was scheduled <strong className="text-gray-400">before</strong> the range started.
+            </p>
+            {followupLoading && <div className="text-center text-gray-500 py-10 text-sm">Loading…</div>}
+            {!followupLoading && followupData && (
+              <SimpleTable colA="Closer" colB="Follow-up Closes" rows={followupData.reps} total={followupData.total} />
+            )}
           </div>
         )}
+
+        {/* ── Demo Scheduled view ───────────────────────────────────── */}
+        {activeView === "demo" && (
+          <div className="space-y-3">
+            <p className="text-xs text-gray-500">
+              Deals where the call was scheduled within the selected date range and the stage is still <strong className="text-gray-400">Demo Scheduled</strong>.
+            </p>
+            {demoLoading && <div className="text-center text-gray-500 py-10 text-sm">Loading…</div>}
+            {!demoLoading && demoData && (
+              <SimpleTable colA="Closer" colB="Demo Scheduled" rows={demoData.reps} total={demoData.total} />
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );

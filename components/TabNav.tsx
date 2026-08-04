@@ -11,7 +11,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "sdr-ae", label: "Setter → Closer" },
   { id: "cold", label: "Cold Traffic" },
   { id: "breakdown", label: "Breakdown" },
-  { id: "monthly", label: "Monthly Report" },
+  { id: "monthly", label: "Analysis" },
 ];
 
 export function TabNav({ active, onChange }: TabNavProps) {

@@ -6,7 +6,7 @@ import { AETab } from "@/components/AETab";
 import { SDRTab } from "@/components/SDRTab";
 import { SDRAETab } from "@/components/SDRAETab";
 import { BreakdownTab } from "@/components/BreakdownTab";
-import { MonthlyReportTab } from "@/components/MonthlyPerformanceTab";
+import { AnalysisTab } from "@/components/MonthlyPerformanceTab";
 import { ColdTrafficTab } from "@/components/ColdTrafficTab";
 
 type Tab = "ae" | "sdr" | "sdr-ae" | "breakdown" | "monthly" | "cold";
@@ -146,7 +146,7 @@ export default function DashboardPage() {
         />
       )}
       {tab === "breakdown" && <BreakdownTab data={bdData} loading={bdLoading} />}
-      {tab === "monthly" && <MonthlyReportTab data={monthlyData} loading={monthlyLoading} onMonthChange={(m1, m2) => fetchMonthly(m1, m2)} />}
+      {tab === "monthly" && <AnalysisTab data={monthlyData} loading={monthlyLoading} onMonthChange={(m1, m2) => fetchMonthly(m1, m2)} from={from} to={to} />}
       {tab === "cold" && <ColdTrafficTab data={coldData} loading={coldLoading} />}
     </div>
   );
