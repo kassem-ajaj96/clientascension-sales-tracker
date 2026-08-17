@@ -1,6 +1,6 @@
 const BASE = "https://api.hubapi.com";
 
-const SDR_SETTERS = ["Antwon", "Erten", "Noah"];
+const SDR_SETTERS = ["Antwon", "Erten", "Noah", "Alfredo", "Momodu"];
 const AE_NAMES = ["Peter", "Logan", "Andrew", "Ciaran", "Fourkan"];
 
 // AIAA Pipeline stage IDs

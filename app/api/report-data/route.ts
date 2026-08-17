@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getHubSpotAllReportData, getHubSpotColdTrafficReportData } from "@/lib/hubspot";
 import { getSheetRows } from "@/lib/sheets";
 
-const SDR_NAMES = ["Antwon", "Noah"];
+const SDR_NAMES = ["Antwon", "Noah", "Alfredo", "Momodu"];
 
 function toNum(val: string): number {
   const n = parseFloat((val || "").replace(/[^0-9.-]/g, ""));
