@@ -81,12 +81,12 @@ async function searchDeals(
   let after: string | undefined;
   do {
     const body: Record<string, unknown> = {
-      filterGroups: setters.map((setter) => ({
+      filterGroups: [{
         filters: [
-          { propertyName: "setter", operator: "EQ", value: setter },
+          { propertyName: "setter", operator: "IN", values: setters },
           ...extraFilters,
         ],
-      })),
+      }],
       properties,
       limit: 100,
     };
