@@ -486,16 +486,34 @@ export async function getDemoScheduledData(from: string, to: string) {
   const fromMs = new Date(from).getTime();
   const toMs   = new Date(`${to}T23:59:59`).getTime();
 
-  const [deals, ownerMap] = await Promise.all([
-    searchDeals(null, [], ["setter", "dealstage", "hubspot_owner_id", "aiaa_call_scheduled"]),
-    buildOwnerMap(),
-  ]);
+  // Search directly by stage (AIAA Pipeline) — no setter filter, which was causing undercounts.
+  const fetchDemoDeals = async (): Promise<{ id: string; properties: any }[]> => {
+    const results: { id: string; properties: any }[] = [];
+    let after: string | undefined;
+    do {
+      const body: Record<string, unknown> = {
+        filterGroups: [{
+          filters: [
+            { propertyName: "dealstage", operator: "EQ", value: MEETING_SCHEDULED },
+          ],
+        }],
+        properties: ["hubspot_owner_id", "aiaa_call_scheduled"],
+        limit: 100,
+      };
+      if (after) body.after = after;
+      const res = await hs("/crm/v3/objects/deals/search", { method: "POST", body: JSON.stringify(body) });
+      results.push(...(res.results ?? []));
+      after = res.paging?.next?.after;
+    } while (after);
+    return results;
+  };
+
+  const [deals, ownerMap] = await Promise.all([fetchDemoDeals(), buildOwnerMap()]);
 
   const counts: Record<string, number> = Object.fromEntries(AE_NAMES.map(n => [n, 0]));
 
   for (const deal of deals) {
-    const { dealstage, hubspot_owner_id, aiaa_call_scheduled } = deal.properties;
-    if (dealstage !== MEETING_SCHEDULED) continue;
+    const { hubspot_owner_id, aiaa_call_scheduled } = deal.properties;
     if (!aiaa_call_scheduled) continue;
     const callMs = new Date(aiaa_call_scheduled).getTime();
     if (isNaN(callMs) || callMs < fromMs || callMs > toMs) continue;
