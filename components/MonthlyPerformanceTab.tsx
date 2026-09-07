@@ -530,7 +530,7 @@ function buildReportHTML(
 
   const numberedPages: string[] = [
     ...closerNames.map((name, i) => closerPage(name, i + 1, total)),
-    ...coldReps.map((name, i) => coldRepPage(name, closerNames.length + i + 1, total)),
+    ...coldReps.map((name: string, i: number) => coldRepPage(name, closerNames.length + i + 1, total)),
     ...setterViews.map(([name, hs1, hs2], i) => setterCloserPage(hs1, hs2, name, closerNames.length + coldReps.length + i + 1, total)),
     setterPage(closerNames.length + coldReps.length + setterViews.length + 1, total),
     cashPage(closerNames.length + coldReps.length + setterViews.length + 2, total),
