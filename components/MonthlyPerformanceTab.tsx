@@ -537,21 +537,33 @@ function buildReportHTML(
     `;
   }
 
-  function setterPage(pageNum: number, total: number): string {
-    const names: string[] = sdr1?.reps?.map((r: any) => r.name) ?? ["Antwon", "Noah"];
+  function setterRepPage(name: string, pageNum: number, total: number): string {
     return `
       <div class="slide-wrap">
         <div class="slide-left">
           <div class="slide-left-brand">Client Ascension</div>
           <div class="slide-left-period">${m2Label} vs ${m1Label}</div>
           <div class="slide-left-title">Setter Performance</div>
+          <div class="slide-left-sub">${name}</div>
         </div>
         <div class="slide-right">
-          ${names.map((name: string) => `
-            <div class="section-lbl">${name}</div>
-            ${setterCompTable(name)}
-          `).join("")}
-          <div class="section-lbl">Team Total</div>
+          ${setterCompTable(name)}
+        </div>
+      </div>
+      ${footer(pageNum, total)}
+    `;
+  }
+
+  function setterPage(pageNum: number, total: number): string {
+    return `
+      <div class="slide-wrap">
+        <div class="slide-left">
+          <div class="slide-left-brand">Client Ascension</div>
+          <div class="slide-left-period">${m2Label} vs ${m1Label}</div>
+          <div class="slide-left-title">Setter Performance</div>
+          <div class="slide-left-sub">Team Total</div>
+        </div>
+        <div class="slide-right">
           ${setterCompTable("Team Total")}
         </div>
       </div>
@@ -571,15 +583,18 @@ function buildReportHTML(
     ["Momodu",  hsMomodu1,  hsMomodu2],
   ];
 
-  const total = closerNames.length + coldReps.length + setterViews.length + 3; // setter perf + cash + rev chart
+  const sdrNames: string[] = sdr1?.reps?.map((r: any) => r.name) ?? ["Antwon", "Noah", "Alfredo", "Momodu"];
+  const total = closerNames.length + coldReps.length + setterViews.length + sdrNames.length + 3; // individual setter pages + team total + cash + rev chart
 
+  const baseOffset = closerNames.length + coldReps.length + setterViews.length;
   const numberedPages: string[] = [
     ...closerNames.map((name, i) => closerPage(name, i + 1, total)),
     ...coldReps.map((name: string, i: number) => coldRepPage(name, closerNames.length + i + 1, total)),
     ...setterViews.map(([name, hs1, hs2], i) => setterCloserPage(hs1, hs2, name, closerNames.length + coldReps.length + i + 1, total)),
-    setterPage(closerNames.length + coldReps.length + setterViews.length + 1, total),
-    cashPage(closerNames.length + coldReps.length + setterViews.length + 2, total),
-    revChartPage(closerNames.length + coldReps.length + setterViews.length + 3, total),
+    ...sdrNames.map((name: string, i: number) => setterRepPage(name, baseOffset + i + 1, total)),
+    setterPage(baseOffset + sdrNames.length + 1, total),
+    cashPage(baseOffset + sdrNames.length + 2, total),
+    revChartPage(baseOffset + sdrNames.length + 3, total),
   ];
 
   const pages = numberedPages.map((content, i) =>
