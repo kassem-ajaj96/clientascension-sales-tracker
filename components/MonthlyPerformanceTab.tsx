@@ -222,6 +222,16 @@ function buildReportHTML(
       .page { page-break-after: always; }
       .page:last-child { page-break-after: avoid; }
     }
+    .slide-wrap { display: flex; min-height: calc(100vh - 104px); gap: 0; }
+    .slide-left { width: 32%; background: #1a3f5c; color: white; padding: 36px 28px; display: flex; flex-direction: column; border-radius: 4px; }
+    .slide-left-brand { font-size: 9px; font-weight: 900; color: #e53e1e; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 36px; }
+    .slide-left-period { font-size: 9px; color: rgba(255,255,255,0.45); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .slide-left-title { font-size: 22px; font-weight: 800; line-height: 1.25; margin-bottom: 10px; }
+    .slide-left-sub { font-size: 13px; font-weight: 600; opacity: 0.7; }
+    .slide-right { flex: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center; }
+    .slide-right table tr:nth-child(even) td { background: #f5f5f5; }
+    .diff-pos { font-style: italic; color: #111; }
+    .diff-neg { font-style: italic; font-weight: bold; color: #dc2626; }
   `;
 
   function hdr(period: string) {
@@ -251,6 +261,18 @@ function buildReportHTML(
     return `<span class="${cls}">${display}</span>`;
   }
 
+  function diffHtmlPdf(c: number | null, prev: number | null, fmt: "num" | "pct" | "money"): string {
+    if (c === null || prev === null) return '<span class="neu">—</span>';
+    const diff = c - prev;
+    if (diff === 0) return '<span class="neu">—</span>';
+    const cls = diff > 0 ? "diff-pos" : "diff-neg";
+    let display = "";
+    if (fmt === "num") display = `${diff > 0 ? "+" : ""}${diff}`;
+    else if (fmt === "pct") display = `${diff > 0 ? "+" : ""}${(diff * 100).toFixed(1)}%`;
+    else display = `${diff > 0 ? "+" : ""}${$m(diff)}`;
+    return `<span class="${cls}">${display}</span>`;
+  }
+
   // ── Closer pages ──────────────────────────────────────────────────────────
 
   const closerNames = ["All Team", ...(monthlyData?.current.reps.map((r) => r.name) ?? [])];
@@ -261,35 +283,43 @@ function buildReportHTML(
     const p = name === "All Team" ? monthlyData?.previous.totals ?? zero : monthlyData?.previous.reps.find((r) => r.name === name) ?? zero;
 
     const rows = [
-      ["Calls",          String(p.scheduled),    String(c.scheduled),    diffHtml(c.scheduled,    p.scheduled,    "num")],
-      ["Shows",          String(p.showed),        String(c.showed),        diffHtml(c.showed,        p.showed,        "num")],
-      ["Offers",         String(p.offered),       String(c.offered),       diffHtml(c.offered,       p.offered,       "num")],
-      ["Closes",         String(p.closes),        String(c.closes),        diffHtml(c.closes,        p.closes,        "num")],
-      ["Cash Collected", $m(p.cashCollected),     $m(c.cashCollected),     diffHtml(c.cashCollected, p.cashCollected, "money")],
-      ["Cash/Call",      $mOrDash(p.cashPerCall), $mOrDash(c.cashPerCall), diffHtml(c.cashPerCall,   p.cashPerCall,   "money")],
-      ["Show Rate",      pct(p.showRate),          pct(c.showRate),          diffHtml(c.showRate,      p.showRate,      "pct")],
-      ["Offer Rate",     pct(p.offerRate),         pct(c.offerRate),         diffHtml(c.offerRate,     p.offerRate,     "pct")],
-      ["Close Rate",     pct(p.closeRate),         pct(c.closeRate),         diffHtml(c.closeRate,     p.closeRate,     "pct")],
+      ["Calls",          String(p.scheduled),    String(c.scheduled),    diffHtmlPdf(c.scheduled,    p.scheduled,    "num")],
+      ["Shows",          String(p.showed),        String(c.showed),        diffHtmlPdf(c.showed,        p.showed,        "num")],
+      ["Offers",         String(p.offered),       String(c.offered),       diffHtmlPdf(c.offered,       p.offered,       "num")],
+      ["Closes",         String(p.closes),        String(c.closes),        diffHtmlPdf(c.closes,        p.closes,        "num")],
+      ["Cash Collected", $m(p.cashCollected),     $m(c.cashCollected),     diffHtmlPdf(c.cashCollected, p.cashCollected, "money")],
+      ["Cash/Call",      $mOrDash(p.cashPerCall), $mOrDash(c.cashPerCall), diffHtmlPdf(c.cashPerCall,   p.cashPerCall,   "money")],
+      ["Show Rate",      pct(p.showRate),          pct(c.showRate),          diffHtmlPdf(c.showRate,      p.showRate,      "pct")],
+      ["Offer Rate",     pct(p.offerRate),         pct(c.offerRate),         diffHtmlPdf(c.offerRate,     p.offerRate,     "pct")],
+      ["Close Rate",     pct(p.closeRate),         pct(c.closeRate),         diffHtmlPdf(c.closeRate,     p.closeRate,     "pct")],
     ];
 
     return `
-      ${hdr(`${m1Label} vs ${m2Label}`)}
-      <div class="title">Closer Performance — ${name}</div>
-      <table>
-        <thead><tr>
-          <th>Metric</th><th class="r">${m2Label}</th><th class="r">${m1Label}</th><th class="c">Growth</th>
-        </tr></thead>
-        <tbody>
-          ${rows.map(([lbl, pv, cv, d]) => `
-            <tr>
-              <td class="name">${lbl}</td>
-              <td class="r" style="color:#999"><strong>${pv}</strong></td>
-              <td class="r"><strong>${cv}</strong></td>
-              <td class="c">${d}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
+      <div class="slide-wrap">
+        <div class="slide-left">
+          <div class="slide-left-brand">Client Ascension</div>
+          <div class="slide-left-period">${m2Label} vs ${m1Label}</div>
+          <div class="slide-left-title">Closer Performance</div>
+          <div class="slide-left-sub">${name}</div>
+        </div>
+        <div class="slide-right">
+          <table>
+            <thead><tr>
+              <th>KPIs</th><th class="r">${m2Label}</th><th class="r">${m1Label}</th><th class="c">Growth</th>
+            </tr></thead>
+            <tbody>
+              ${rows.map(([lbl, pv, cv, d]) => `
+                <tr>
+                  <td class="name">${lbl}</td>
+                  <td class="r" style="color:#999"><strong>${pv}</strong></td>
+                  <td class="r"><strong>${cv}</strong></td>
+                  <td class="c">${d}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
       ${footer(pageNum, total)}
     `;
   }
