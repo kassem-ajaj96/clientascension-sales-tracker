@@ -381,27 +381,35 @@ function buildReportHTML(
       const tot = name === "Team Total";
       return `<tr${tot ? ' class="tot"' : ''}>
         <td class="name">${name}</td>
-        <td class="r dim grp-sep">${p.scheduled}</td><td class="r">${c.scheduled}</td><td class="c">${diffHtml(c.scheduled, p.scheduled, "num")}</td>
-        <td class="r dim grp-sep">${p.showed}</td><td class="r">${c.showed}</td><td class="c">${diffHtml(c.showed, p.showed, "num")}</td>
-        <td class="r dim grp-sep">${p.closes}</td><td class="r">${c.closes}</td><td class="c">${diffHtml(c.closes, p.closes, "num")}</td>
-        <td class="c dim grp-sep">${pct(p.showRate)}</td><td class="c">${pct(c.showRate)}</td><td class="c">${diffHtml(c.showRate, p.showRate, "pct")}</td>
-        <td class="c dim grp-sep">${pct(p.closeRate)}</td><td class="c">${pct(c.closeRate)}</td><td class="c">${diffHtml(c.closeRate, p.closeRate, "pct")}</td>
+        <td class="r dim grp-sep">${p.scheduled}</td><td class="r">${c.scheduled}</td><td class="c">${diffHtmlPdf(c.scheduled, p.scheduled, "num")}</td>
+        <td class="r dim grp-sep">${p.showed}</td><td class="r">${c.showed}</td><td class="c">${diffHtmlPdf(c.showed, p.showed, "num")}</td>
+        <td class="r dim grp-sep">${p.closes}</td><td class="r">${c.closes}</td><td class="c">${diffHtmlPdf(c.closes, p.closes, "num")}</td>
+        <td class="c dim grp-sep">${pct(p.showRate)}</td><td class="c">${pct(c.showRate)}</td><td class="c">${diffHtmlPdf(c.showRate, p.showRate, "pct")}</td>
+        <td class="c dim grp-sep">${pct(p.closeRate)}</td><td class="c">${pct(c.closeRate)}</td><td class="c">${diffHtmlPdf(c.closeRate, p.closeRate, "pct")}</td>
       </tr>`;
     });
 
     return `
-      ${hdr(`${m1Label} vs ${m2Label}`)}
-      <div class="title">Setter → Closer: ${setterName}</div>
-      <table style="font-size:11px">
-        <thead>
-          <tr>
-            <th rowspan="2" style="vertical-align:bottom">Rep</th>
-            ${grpTh("Calls")}${grpTh("Showed")}${grpTh("Closes")}${grpTh("Show %")}${grpTh("Close %")}
-          </tr>
-          <tr>${grpSubThs("r")}${grpSubThs("r")}${grpSubThs("r")}${grpSubThs("c")}${grpSubThs("c")}</tr>
-        </thead>
-        <tbody>${rows.join("")}</tbody>
-      </table>
+      <div class="slide-wrap">
+        <div class="slide-left" style="width:25%">
+          <div class="slide-left-brand">Client Ascension</div>
+          <div class="slide-left-period">${m2Label} vs ${m1Label}</div>
+          <div class="slide-left-title">Setter → Closer</div>
+          <div class="slide-left-sub">${setterName}</div>
+        </div>
+        <div class="slide-right">
+          <table style="font-size:11px">
+            <thead>
+              <tr>
+                <th rowspan="2" style="vertical-align:bottom">Rep</th>
+                ${grpTh("Calls")}${grpTh("Showed")}${grpTh("Closes")}${grpTh("Show %")}${grpTh("Close %")}
+              </tr>
+              <tr>${grpSubThs("r")}${grpSubThs("r")}${grpSubThs("r")}${grpSubThs("c")}${grpSubThs("c")}</tr>
+            </thead>
+            <tbody>${rows.join("")}</tbody>
+          </table>
+        </div>
+      </div>
       ${footer(pageNum, total)}
     `;
   }
@@ -500,14 +508,14 @@ function buildReportHTML(
       : (sdr2?.reps?.find((r: any) => r.name === name) ?? zero);
 
     const rows = [
-      ["Dials",           String(p.dials),           String(c.dials),           diffHtml(c.dials,           p.dials,           "num")],
-      ["Connects",        String(p.connects),        String(c.connects),        diffHtml(c.connects,        p.connects,        "num")],
-      ["Conversations",   String(p.convo),            String(c.convo),           diffHtml(c.convo,           p.convo,           "num")],
-      ["Meetings Booked", String(p.meetingsBooked),  String(c.meetingsBooked),  diffHtml(c.meetingsBooked,  p.meetingsBooked,  "num")],
-      ["Connection Rate", pct(p.connectionRate),     pct(c.connectionRate),     diffHtml(c.connectionRate,  p.connectionRate,  "pct")],
-      ["Connect → Convo", pct(p.connectToConvo),     pct(c.connectToConvo),     diffHtml(c.connectToConvo,  p.connectToConvo,  "pct")],
-      ["Convo → Booking", pct(p.convoToBooking),     pct(c.convoToBooking),     diffHtml(c.convoToBooking,  p.convoToBooking,  "pct")],
-      ["Dial → Booking",  pct(p.dialToBooking),      pct(c.dialToBooking),      diffHtml(c.dialToBooking,   p.dialToBooking,   "pct")],
+      ["Dials",           String(p.dials),           String(c.dials),           diffHtmlPdf(c.dials,           p.dials,           "num")],
+      ["Connects",        String(p.connects),        String(c.connects),        diffHtmlPdf(c.connects,        p.connects,        "num")],
+      ["Conversations",   String(p.convo),            String(c.convo),           diffHtmlPdf(c.convo,           p.convo,           "num")],
+      ["Meetings Booked", String(p.meetingsBooked),  String(c.meetingsBooked),  diffHtmlPdf(c.meetingsBooked,  p.meetingsBooked,  "num")],
+      ["Connection Rate", pct(p.connectionRate),     pct(c.connectionRate),     diffHtmlPdf(c.connectionRate,  p.connectionRate,  "pct")],
+      ["Connect → Convo", pct(p.connectToConvo),     pct(c.connectToConvo),     diffHtmlPdf(c.connectToConvo,  p.connectToConvo,  "pct")],
+      ["Convo → Booking", pct(p.convoToBooking),     pct(c.convoToBooking),     diffHtmlPdf(c.convoToBooking,  p.convoToBooking,  "pct")],
+      ["Dial → Booking",  pct(p.dialToBooking),      pct(c.dialToBooking),      diffHtmlPdf(c.dialToBooking,   p.dialToBooking,   "pct")],
     ];
 
     return `
@@ -532,14 +540,21 @@ function buildReportHTML(
   function setterPage(pageNum: number, total: number): string {
     const names: string[] = sdr1?.reps?.map((r: any) => r.name) ?? ["Antwon", "Noah"];
     return `
-      ${hdr(`${m1Label} vs ${m2Label}`)}
-      <div class="title">Setter Performance</div>
-      ${names.map((name: string) => `
-        <div class="section-lbl">${name}</div>
-        ${setterCompTable(name)}
-      `).join("")}
-      <div class="section-lbl">Team Total</div>
-      ${setterCompTable("Team Total")}
+      <div class="slide-wrap">
+        <div class="slide-left">
+          <div class="slide-left-brand">Client Ascension</div>
+          <div class="slide-left-period">${m2Label} vs ${m1Label}</div>
+          <div class="slide-left-title">Setter Performance</div>
+        </div>
+        <div class="slide-right">
+          ${names.map((name: string) => `
+            <div class="section-lbl">${name}</div>
+            ${setterCompTable(name)}
+          `).join("")}
+          <div class="section-lbl">Team Total</div>
+          ${setterCompTable("Team Total")}
+        </div>
+      </div>
       ${footer(pageNum, total)}
     `;
   }
