@@ -177,6 +177,8 @@ function buildReportHTML(
   hsAll1: any, hsAll2: any,
   hsAntwon1: any, hsAntwon2: any,
   hsNoah1: any, hsNoah2: any,
+  hsAlfredo1: any, hsAlfredo2: any,
+  hsMomodu1: any, hsMomodu2: any,
   generatedAt: string
 ): string {
   const pct = (v: number | null) => (v === null ? "—" : `${(v * 100).toFixed(1)}%`);
@@ -281,7 +283,7 @@ function buildReportHTML(
           ${rows.map(([lbl, pv, cv, d]) => `
             <tr>
               <td class="name">${lbl}</td>
-              <td class="r" style="color:#999">${pv}</td>
+              <td class="r" style="color:#999"><strong>${pv}</strong></td>
               <td class="r"><strong>${cv}</strong></td>
               <td class="c">${d}</td>
             </tr>
@@ -301,39 +303,36 @@ function buildReportHTML(
     return `<th class="${align} grp-sep dim">${m2Label}</th><th class="${align}">${m1Label}</th><th class="c">±</th>`;
   }
 
-  // ── Cold Traffic page ─────────────────────────────────────────────────────
+  // ── Cold Traffic page (one page per closer) ──────────────────────────────
 
-  function coldPage(pageNum: number, total: number): string {
-    const get = (ds: any, name: string) =>
-      name === "Team Total" ? ds?.totals : ds?.reps?.find((r: any) => r.name === name);
-    const names = [...(cold1?.reps?.map((r: any) => r.name) ?? []), "Team Total"];
-
-    const rows = names.map(name => {
-      const c = get(cold1, name) ?? { calls: 0, liveCalls: 0, closes: 0, showRate: null, closeRate: null };
-      const p = get(cold2, name) ?? { calls: 0, liveCalls: 0, closes: 0, showRate: null, closeRate: null };
-      const tot = name === "Team Total";
-      return `<tr${tot ? ' class="tot"' : ''}>
-        <td class="name">${name}</td>
-        <td class="r dim grp-sep">${p.calls}</td><td class="r">${c.calls}</td><td class="c">${diffHtml(c.calls, p.calls, "num")}</td>
-        <td class="r dim grp-sep">${p.liveCalls}</td><td class="r">${c.liveCalls}</td><td class="c">${diffHtml(c.liveCalls, p.liveCalls, "num")}</td>
-        <td class="r dim grp-sep">${p.closes}</td><td class="r">${c.closes}</td><td class="c">${diffHtml(c.closes, p.closes, "num")}</td>
-        <td class="c dim grp-sep">${pct(p.showRate)}</td><td class="c">${pct(c.showRate)}</td><td class="c">${diffHtml(c.showRate, p.showRate, "pct")}</td>
-        <td class="c dim grp-sep">${pct(p.closeRate)}</td><td class="c">${pct(c.closeRate)}</td><td class="c">${diffHtml(c.closeRate, p.closeRate, "pct")}</td>
-      </tr>`;
-    });
-
+  function coldRepPage(repName: string, pageNum: number, total: number): string {
+    const getR = (ds: any) => ds?.reps?.find((r: any) => r.name === repName) ?? { calls: 0, liveCalls: 0, closes: 0, showRate: null, closeRate: null };
+    const c = getR(cold1);
+    const p = getR(cold2);
+    const rows = [
+      ["Calls",      String(p.calls),     String(c.calls),     diffHtml(c.calls,     p.calls,     "num")],
+      ["Live Calls", String(p.liveCalls), String(c.liveCalls), diffHtml(c.liveCalls, p.liveCalls, "num")],
+      ["Closes",     String(p.closes),    String(c.closes),    diffHtml(c.closes,    p.closes,    "num")],
+      ["Show Rate",  pct(p.showRate),     pct(c.showRate),     diffHtml(c.showRate,  p.showRate,  "pct")],
+      ["Close Rate", pct(p.closeRate),    pct(c.closeRate),    diffHtml(c.closeRate, p.closeRate, "pct")],
+    ];
     return `
       ${hdr(`${m1Label} vs ${m2Label}`)}
-      <div class="title">Cold Traffic Performance</div>
-      <table style="font-size:11px">
-        <thead>
-          <tr>
-            <th rowspan="2" style="vertical-align:bottom">Rep</th>
-            ${grpTh("Calls")}${grpTh("Live Calls")}${grpTh("Closes")}${grpTh("Show %")}${grpTh("Close %")}
-          </tr>
-          <tr>${grpSubThs("r")}${grpSubThs("r")}${grpSubThs("r")}${grpSubThs("c")}${grpSubThs("c")}</tr>
-        </thead>
-        <tbody>${rows.join("")}</tbody>
+      <div class="title">Cold Traffic — ${repName}</div>
+      <table>
+        <thead><tr>
+          <th>Metric</th><th class="r">${m2Label}</th><th class="r">${m1Label}</th><th class="c">Growth</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(([lbl, pv, cv, d]) => `
+            <tr>
+              <td class="name">${lbl}</td>
+              <td class="r" style="color:#999"><strong>${pv}</strong></td>
+              <td class="r"><strong>${cv}</strong></td>
+              <td class="c">${d}</td>
+            </tr>
+          `).join("")}
+        </tbody>
       </table>
       ${footer(pageNum, total)}
     `;
@@ -490,7 +489,7 @@ function buildReportHTML(
           ${rows.map(([lbl, pv, cv, d]) => `
             <tr>
               <td class="name">${lbl}</td>
-              <td class="r" style="color:#999">${pv}</td>
+              <td class="r" style="color:#999"><strong>${pv}</strong></td>
               <td class="r"><strong>${cv}</strong></td>
               <td class="c">${d}</td>
             </tr>
@@ -517,17 +516,25 @@ function buildReportHTML(
 
   // ── Assemble pages ────────────────────────────────────────────────────────
 
-  const total = closerNames.length + 7; // cold + 3×setter→closer + setter perf + cash + rev chart
+  const ACTIVE_AES = ["Peter", "Logan", "Andrew", "Ciaran"];
+  const coldReps = (cold1?.reps ?? []).map((r: any) => r.name).filter((n: string) => ACTIVE_AES.includes(n));
+  const setterViews: [string, any, any][] = [
+    ["All",     hsAll1,     hsAll2],
+    ["Antwon",  hsAntwon1,  hsAntwon2],
+    ["Noah",    hsNoah1,    hsNoah2],
+    ["Alfredo", hsAlfredo1, hsAlfredo2],
+    ["Momodu",  hsMomodu1,  hsMomodu2],
+  ];
+
+  const total = closerNames.length + coldReps.length + setterViews.length + 3; // setter perf + cash + rev chart
 
   const numberedPages: string[] = [
     ...closerNames.map((name, i) => closerPage(name, i + 1, total)),
-    coldPage(closerNames.length + 1, total),
-    setterCloserPage(hsAll1,    hsAll2,    "All",    closerNames.length + 2, total),
-    setterCloserPage(hsAntwon1, hsAntwon2, "Antwon", closerNames.length + 3, total),
-    setterCloserPage(hsNoah1,   hsNoah2,   "Noah",   closerNames.length + 4, total),
-    setterPage(closerNames.length + 5, total),
-    cashPage(closerNames.length + 6, total),
-    revChartPage(closerNames.length + 7, total),
+    ...coldReps.map((name, i) => coldRepPage(name, closerNames.length + i + 1, total)),
+    ...setterViews.map(([name, hs1, hs2], i) => setterCloserPage(hs1, hs2, name, closerNames.length + coldReps.length + i + 1, total)),
+    setterPage(closerNames.length + coldReps.length + setterViews.length + 1, total),
+    cashPage(closerNames.length + coldReps.length + setterViews.length + 2, total),
+    revChartPage(closerNames.length + coldReps.length + setterViews.length + 3, total),
   ];
 
   const pages = numberedPages.map((content, i) =>
@@ -659,6 +666,8 @@ export function AnalysisTab({
         rd.hsAll1, rd.hsAll2,
         rd.hsAntwon1, rd.hsAntwon2,
         rd.hsNoah1, rd.hsNoah2,
+        rd.hsAlfredo1, rd.hsAlfredo2,
+        rd.hsMomodu1, rd.hsMomodu2,
         generatedAt
       );
 

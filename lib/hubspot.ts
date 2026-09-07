@@ -402,7 +402,7 @@ export async function getHubSpotAllReportData(
     buildOwnerMap(),
   ]);
 
-  const VIEWS = ["All", "Antwon", "Noah"] as const;
+  const VIEWS = ["All", "Antwon", "Noah", "Alfredo", "Momodu"] as const;
   const makeAEStats = () => Object.fromEntries(AE_NAMES.map((n) => [n, emptyStats()])) as Record<string, AEStats>;
   const sm: Record<string, { m1: Record<string, AEStats>; m2: Record<string, AEStats> }> = {};
   for (const v of VIEWS) sm[v] = { m1: makeAEStats(), m2: makeAEStats() };
@@ -445,9 +445,11 @@ export async function getHubSpotAllReportData(
   }
 
   return {
-    all1: buildResponse(sm["All"].m1),   all2: buildResponse(sm["All"].m2),
+    all1: buildResponse(sm["All"].m1),       all2: buildResponse(sm["All"].m2),
     antwon1: buildResponse(sm["Antwon"].m1), antwon2: buildResponse(sm["Antwon"].m2),
-    noah1: buildResponse(sm["Noah"].m1),  noah2: buildResponse(sm["Noah"].m2),
+    noah1: buildResponse(sm["Noah"].m1),     noah2: buildResponse(sm["Noah"].m2),
+    alfredo1: buildResponse(sm["Alfredo"].m1), alfredo2: buildResponse(sm["Alfredo"].m2),
+    momodu1: buildResponse(sm["Momodu"].m1), momodu2: buildResponse(sm["Momodu"].m2),
   };
 }
 

@@ -104,6 +104,8 @@ export async function GET(req: NextRequest) {
       hsAll1: hs.all1, hsAll2: hs.all2,
       hsAntwon1: hs.antwon1, hsAntwon2: hs.antwon2,
       hsNoah1: hs.noah1, hsNoah2: hs.noah2,
+      hsAlfredo1: hs.alfredo1, hsAlfredo2: hs.alfredo2,
+      hsMomodu1: hs.momodu1, hsMomodu2: hs.momodu2,
     });
   } catch (err) {
     console.error("Report data error:", err);
