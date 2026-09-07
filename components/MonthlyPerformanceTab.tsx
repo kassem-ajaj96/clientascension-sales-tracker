@@ -576,7 +576,7 @@ function buildReportHTML(
   const ACTIVE_AES = ["Peter", "Logan", "Andrew", "Ciaran"];
   const coldReps = (cold1?.reps ?? []).map((r: any) => r.name).filter((n: string) => ACTIVE_AES.includes(n));
   const setterViews: [string, any, any][] = [
-    ["All",     hsAll1,     hsAll2],
+    ["Team Total", hsAll1, hsAll2],
     ["Antwon",  hsAntwon1,  hsAntwon2],
     ["Noah",    hsNoah1,    hsNoah2],
     ["Alfredo", hsAlfredo1, hsAlfredo2],
