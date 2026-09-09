@@ -229,9 +229,10 @@ function buildReportHTML(
     .slide-left-title { font-size: 18px; font-weight: 800; line-height: 1.25; margin-bottom: 8px; }
     .slide-left-sub { font-size: 12px; font-weight: 600; opacity: 0.7; }
     .slide-right { flex: 1; padding-left: 32px; display: flex; flex-direction: column; justify-content: center; }
+    .slide-right table { width: auto; min-width: 55%; }
     .slide-right table tr:nth-child(even) td { background: #f5f5f5; }
-    .diff-pos { font-style: italic; color: #111; }
-    .diff-neg { font-style: italic; font-weight: bold; color: #dc2626; }
+    .diff-pos { color: #16a34a; font-weight: 700; }
+    .diff-neg { color: #dc2626; font-weight: 700; }
   `;
 
   function hdr(period: string) {
@@ -283,15 +284,15 @@ function buildReportHTML(
     const p = name === "All Team" ? monthlyData?.previous.totals ?? zero : monthlyData?.previous.reps.find((r) => r.name === name) ?? zero;
 
     const rows = [
-      ["Calls",          String(p.scheduled),    String(c.scheduled),    diffHtmlPdf(c.scheduled,    p.scheduled,    "num")],
-      ["Shows",          String(p.showed),        String(c.showed),        diffHtmlPdf(c.showed,        p.showed,        "num")],
-      ["Offers",         String(p.offered),       String(c.offered),       diffHtmlPdf(c.offered,       p.offered,       "num")],
-      ["Closes",         String(p.closes),        String(c.closes),        diffHtmlPdf(c.closes,        p.closes,        "num")],
-      ["Cash Collected", $m(p.cashCollected),     $m(c.cashCollected),     diffHtmlPdf(c.cashCollected, p.cashCollected, "money")],
-      ["Cash/Call",      $mOrDash(p.cashPerCall), $mOrDash(c.cashPerCall), diffHtmlPdf(c.cashPerCall,   p.cashPerCall,   "money")],
-      ["Show Rate",      pct(p.showRate),          pct(c.showRate),          diffHtmlPdf(c.showRate,      p.showRate,      "pct")],
-      ["Offer Rate",     pct(p.offerRate),         pct(c.offerRate),         diffHtmlPdf(c.offerRate,     p.offerRate,     "pct")],
-      ["Close Rate",     pct(p.closeRate),         pct(c.closeRate),         diffHtmlPdf(c.closeRate,     p.closeRate,     "pct")],
+      ["Calls",          String(p.scheduled),    String(c.scheduled),    diffHtmlPdf(p.scheduled,    c.scheduled,    "num")],
+      ["Shows",          String(p.showed),        String(c.showed),        diffHtmlPdf(p.showed,        c.showed,        "num")],
+      ["Offers",         String(p.offered),       String(c.offered),       diffHtmlPdf(p.offered,       c.offered,       "num")],
+      ["Closes",         String(p.closes),        String(c.closes),        diffHtmlPdf(p.closes,        c.closes,        "num")],
+      ["Cash Collected", $m(p.cashCollected),     $m(c.cashCollected),     diffHtmlPdf(p.cashCollected, c.cashCollected, "money")],
+      ["Cash/Call",      $mOrDash(p.cashPerCall), $mOrDash(c.cashPerCall), diffHtmlPdf(p.cashPerCall,   c.cashPerCall,   "money")],
+      ["Show Rate",      pct(p.showRate),          pct(c.showRate),          diffHtmlPdf(p.showRate,      c.showRate,      "pct")],
+      ["Offer Rate",     pct(p.offerRate),         pct(c.offerRate),         diffHtmlPdf(p.offerRate,     c.offerRate,     "pct")],
+      ["Close Rate",     pct(p.closeRate),         pct(c.closeRate),         diffHtmlPdf(p.closeRate,     c.closeRate,     "pct")],
     ];
 
     return `
@@ -311,7 +312,7 @@ function buildReportHTML(
               ${rows.map(([lbl, pv, cv, d]) => `
                 <tr>
                   <td class="name">${lbl}</td>
-                  <td class="r" style="color:#999"><strong>${pv}</strong></td>
+                  <td class="r"><strong>${pv}</strong></td>
                   <td class="r"><strong>${cv}</strong></td>
                   <td class="c">${d}</td>
                 </tr>
@@ -340,14 +341,14 @@ function buildReportHTML(
     const c = getR(cold1);
     const p = getR(cold2);
     const rows = [
-      ["Calls",      String(p.calls),     String(c.calls),     diffHtml(c.calls,     p.calls,     "num")],
-      ["Live Calls", String(p.liveCalls), String(c.liveCalls), diffHtml(c.liveCalls, p.liveCalls, "num")],
-      ["Closes",     String(p.closes),    String(c.closes),    diffHtml(c.closes,    p.closes,    "num")],
-      ["Show Rate",  pct(p.showRate),     pct(c.showRate),     diffHtml(c.showRate,  p.showRate,  "pct")],
-      ["Close Rate", pct(p.closeRate),    pct(c.closeRate),    diffHtml(c.closeRate, p.closeRate, "pct")],
+      ["Calls",      String(p.calls),     String(c.calls),     diffHtml(p.calls,     c.calls,     "num")],
+      ["Live Calls", String(p.liveCalls), String(c.liveCalls), diffHtml(p.liveCalls, c.liveCalls, "num")],
+      ["Closes",     String(p.closes),    String(c.closes),    diffHtml(p.closes,    c.closes,    "num")],
+      ["Show Rate",  pct(p.showRate),     pct(c.showRate),     diffHtml(p.showRate,  c.showRate,  "pct")],
+      ["Close Rate", pct(p.closeRate),    pct(c.closeRate),    diffHtml(p.closeRate, c.closeRate, "pct")],
     ];
     return `
-      ${hdr(`${m1Label} vs ${m2Label}`)}
+      ${hdr(`${m2Label} vs ${m1Label}`)}
       <div class="title">Cold Traffic — ${repName}</div>
       <table>
         <thead><tr>
@@ -430,12 +431,12 @@ function buildReportHTML(
       const tot = name === "All Team";
       return `<tr${tot ? ' class="tot"' : ''}>
         <td class="name">${name}</td>
-        <td class="r dim grp-sep">${$m(p.cashCollected)}</td><td class="r">${$m(c.cashCollected)}</td><td class="c">${diffHtml(c.cashCollected, p.cashCollected, "money")}</td>
+        <td class="r grp-sep">${$m(p.cashCollected)}</td><td class="r">${$m(c.cashCollected)}</td><td class="c">${diffHtml(p.cashCollected, c.cashCollected, "money")}</td>
       </tr>`;
     });
 
     return `
-      ${hdr(`${m1Label} vs ${m2Label}`)}
+      ${hdr(`${m2Label} vs ${m1Label}`)}
       <div class="title">Cash Collected</div>
       <table>
         <thead>
@@ -461,12 +462,12 @@ function buildReportHTML(
       const tot = name === "All Team";
       return `<tr${tot ? ' class="tot"' : ''}>
         <td class="name">${name}</td>
-        <td class="r dim grp-sep">${p.closes}</td><td class="r">${c.closes}</td><td class="c">${diffHtml(c.closes, p.closes, "num")}</td>
+        <td class="r grp-sep">${p.closes}</td><td class="r">${c.closes}</td><td class="c">${diffHtml(p.closes, c.closes, "num")}</td>
       </tr>`;
     });
 
     return `
-      ${hdr(`${m1Label} vs ${m2Label}`)}
+      ${hdr(`${m2Label} vs ${m1Label}`)}
       <div class="title">Closes</div>
       <table>
         <thead>
@@ -541,14 +542,14 @@ function buildReportHTML(
       : (sdr2?.reps?.find((r: any) => r.name === name) ?? zero);
 
     const rows = [
-      ["Dials",           String(p.dials),           String(c.dials),           diffHtmlPdf(c.dials,           p.dials,           "num")],
-      ["Connects",        String(p.connects),        String(c.connects),        diffHtmlPdf(c.connects,        p.connects,        "num")],
-      ["Conversations",   String(p.convo),            String(c.convo),           diffHtmlPdf(c.convo,           p.convo,           "num")],
-      ["Meetings Booked", String(p.meetingsBooked),  String(c.meetingsBooked),  diffHtmlPdf(c.meetingsBooked,  p.meetingsBooked,  "num")],
-      ["Connection Rate", pct(p.connectionRate),     pct(c.connectionRate),     diffHtmlPdf(c.connectionRate,  p.connectionRate,  "pct")],
-      ["Connect → Convo", pct(p.connectToConvo),     pct(c.connectToConvo),     diffHtmlPdf(c.connectToConvo,  p.connectToConvo,  "pct")],
-      ["Convo → Booking", pct(p.convoToBooking),     pct(c.convoToBooking),     diffHtmlPdf(c.convoToBooking,  p.convoToBooking,  "pct")],
-      ["Dial → Booking",  pct(p.dialToBooking),      pct(c.dialToBooking),      diffHtmlPdf(c.dialToBooking,   p.dialToBooking,   "pct")],
+      ["Dials",           String(p.dials),           String(c.dials),           diffHtmlPdf(p.dials,           c.dials,           "num")],
+      ["Connects",        String(p.connects),        String(c.connects),        diffHtmlPdf(p.connects,        c.connects,        "num")],
+      ["Conversations",   String(p.convo),            String(c.convo),           diffHtmlPdf(p.convo,           c.convo,           "num")],
+      ["Meetings Booked", String(p.meetingsBooked),  String(c.meetingsBooked),  diffHtmlPdf(p.meetingsBooked,  c.meetingsBooked,  "num")],
+      ["Connection Rate", pct(p.connectionRate),     pct(c.connectionRate),     diffHtmlPdf(p.connectionRate,  c.connectionRate,  "pct")],
+      ["Connect → Convo", pct(p.connectToConvo),     pct(c.connectToConvo),     diffHtmlPdf(p.connectToConvo,  c.connectToConvo,  "pct")],
+      ["Convo → Booking", pct(p.convoToBooking),     pct(c.convoToBooking),     diffHtmlPdf(p.convoToBooking,  c.convoToBooking,  "pct")],
+      ["Dial → Booking",  pct(p.dialToBooking),      pct(c.dialToBooking),      diffHtmlPdf(p.dialToBooking,   c.dialToBooking,   "pct")],
     ];
 
     return `
