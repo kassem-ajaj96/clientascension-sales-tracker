@@ -370,43 +370,48 @@ function buildReportHTML(
 
   // ── Setter → Closer pages ─────────────────────────────────────────────────
 
-  function setterCloserPage(hs1: any, hs2: any, setterName: string, pageNum: number, total: number): string {
-    const get = (ds: any, name: string) =>
-      name === "Team Total" ? ds?.totals : ds?.reps?.find((r: any) => r.name === name);
-    const names = [...(hs1?.reps?.map((r: any) => r.name) ?? []), "Team Total"];
+  function closerFromSettersPage(closerName: string, pageNum: number, total: number): string {
+    const setterCols: [string, any][] = [
+      ["Antwon",  hsAntwon1],
+      ["Noah",    hsNoah1],
+      ["Alfredo", hsAlfredo1],
+      ["Momodu",  hsMomodu1],
+    ];
+    const zero = { scheduled: 0, showed: 0, offered: 0, closes: 0, showRate: null, offerRate: null, closeRate: null, cashCollected: 0 };
+    const getData = (ds: any) => ds?.reps?.find((r: any) => r.name === closerName) ?? zero;
+    const cols = setterCols.map(([name, ds]) => ({ name, d: getData(ds) }));
 
-    const rows = names.map(name => {
-      const c = get(hs1, name) ?? { scheduled: 0, showed: 0, closes: 0, showRate: null, closeRate: null };
-      const p = get(hs2, name) ?? { scheduled: 0, showed: 0, closes: 0, showRate: null, closeRate: null };
-      const tot = name === "Team Total";
-      return `<tr${tot ? ' class="tot"' : ''}>
-        <td class="name">${name}</td>
-        <td class="r dim grp-sep">${p.scheduled}</td><td class="r">${c.scheduled}</td><td class="c">${diffHtmlPdf(c.scheduled, p.scheduled, "num")}</td>
-        <td class="r dim grp-sep">${p.showed}</td><td class="r">${c.showed}</td><td class="c">${diffHtmlPdf(c.showed, p.showed, "num")}</td>
-        <td class="r dim grp-sep">${p.closes}</td><td class="r">${c.closes}</td><td class="c">${diffHtmlPdf(c.closes, p.closes, "num")}</td>
-        <td class="c dim grp-sep">${pct(p.showRate)}</td><td class="c">${pct(c.showRate)}</td><td class="c">${diffHtmlPdf(c.showRate, p.showRate, "pct")}</td>
-        <td class="c dim grp-sep">${pct(p.closeRate)}</td><td class="c">${pct(c.closeRate)}</td><td class="c">${diffHtmlPdf(c.closeRate, p.closeRate, "pct")}</td>
-      </tr>`;
-    });
+    const metrics: [string, (d: any) => string][] = [
+      ["No. of Calls",   d => String(d.scheduled)],
+      ["Live Calls",     d => String(d.showed)],
+      ["Show Rate",      d => pct(d.showRate)],
+      ["Offer Rate",     d => pct(d.offerRate)],
+      ["Closed Deals",   d => String(d.closes)],
+      ["Close Rate",     d => pct(d.closeRate)],
+      ["Cash Collected", d => $m(d.cashCollected)],
+    ];
+
+    const rows = metrics.map(([label, getValue]) => `
+      <tr>
+        <td class="name">${label}</td>
+        ${cols.map(({ d }) => `<td class="r"><strong>${getValue(d)}</strong></td>`).join("")}
+      </tr>
+    `).join("");
 
     return `
       <div class="slide-wrap">
-        <div class="slide-left" style="width:25%">
+        <div class="slide-left">
           <div class="slide-left-brand">Client Ascension</div>
-          <div class="slide-left-period">${m2Label} vs ${m1Label}</div>
-          <div class="slide-left-title">Setter → Closer</div>
-          <div class="slide-left-sub">${setterName}</div>
+          <div class="slide-left-period">${m1Label}</div>
+          <div class="slide-left-title">${closerName}'s Performance from Setters</div>
         </div>
         <div class="slide-right">
-          <table style="font-size:11px">
-            <thead>
-              <tr>
-                <th rowspan="2" style="vertical-align:bottom">Rep</th>
-                ${grpTh("Calls")}${grpTh("Showed")}${grpTh("Closes")}${grpTh("Show %")}${grpTh("Close %")}
-              </tr>
-              <tr>${grpSubThs("r")}${grpSubThs("r")}${grpSubThs("r")}${grpSubThs("c")}${grpSubThs("c")}</tr>
-            </thead>
-            <tbody>${rows.join("")}</tbody>
+          <table>
+            <thead><tr>
+              <th>KPIs</th>
+              ${cols.map(({ name }) => `<th class="r">${name}</th>`).join("")}
+            </tr></thead>
+            <tbody>${rows}</tbody>
           </table>
         </div>
       </div>
@@ -575,22 +580,14 @@ function buildReportHTML(
 
   const ACTIVE_AES = ["Peter", "Logan", "Andrew", "Ciaran"];
   const coldReps = (cold1?.reps ?? []).map((r: any) => r.name).filter((n: string) => ACTIVE_AES.includes(n));
-  const setterViews: [string, any, any][] = [
-    ["Team Total", hsAll1, hsAll2],
-    ["Antwon",  hsAntwon1,  hsAntwon2],
-    ["Noah",    hsNoah1,    hsNoah2],
-    ["Alfredo", hsAlfredo1, hsAlfredo2],
-    ["Momodu",  hsMomodu1,  hsMomodu2],
-  ];
-
   const sdrNames: string[] = sdr1?.reps?.map((r: any) => r.name) ?? ["Antwon", "Noah", "Alfredo", "Momodu"];
-  const total = closerNames.length + coldReps.length + setterViews.length + sdrNames.length + 3; // individual setter pages + team total + cash + rev chart
+  const total = closerNames.length + coldReps.length + ACTIVE_AES.length + sdrNames.length + 3; // closer-from-setters pages + individual setter pages + team total + cash + rev chart
 
-  const baseOffset = closerNames.length + coldReps.length + setterViews.length;
+  const baseOffset = closerNames.length + coldReps.length + ACTIVE_AES.length;
   const numberedPages: string[] = [
     ...closerNames.map((name, i) => closerPage(name, i + 1, total)),
     ...coldReps.map((name: string, i: number) => coldRepPage(name, closerNames.length + i + 1, total)),
-    ...setterViews.map(([name, hs1, hs2], i) => setterCloserPage(hs1, hs2, name, closerNames.length + coldReps.length + i + 1, total)),
+    ...ACTIVE_AES.map((name, i) => closerFromSettersPage(name, closerNames.length + coldReps.length + i + 1, total)),
     ...sdrNames.map((name: string, i: number) => setterRepPage(name, baseOffset + i + 1, total)),
     setterPage(baseOffset + sdrNames.length + 1, total),
     cashPage(baseOffset + sdrNames.length + 2, total),
