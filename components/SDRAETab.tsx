@@ -24,7 +24,7 @@ function fmtPct(v: number | null) {
   return `${(v * 100).toFixed(1)}%`;
 }
 
-const SETTERS = ["All", "Antwon", "Noah", "Alfredo", "Momodu"] as const;
+const SETTERS = ["All", "Antwon", "Noah", "Alfredo", "Momodu", "Jacob"] as const;
 type Setter = typeof SETTERS[number];
 
 export function SDRAETab({

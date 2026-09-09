@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getHubSpotAllReportData, getHubSpotColdTrafficReportData } from "@/lib/hubspot";
 import { getSheetRows } from "@/lib/sheets";
 
-const SDR_NAMES = ["Antwon", "Noah", "Alfredo", "Momodu"];
+const SDR_NAMES = ["Antwon", "Noah", "Alfredo", "Momodu", "Jacob"];
 
 function toNum(val: string): number {
   const n = parseFloat((val || "").replace(/[^0-9.-]/g, ""));
@@ -106,6 +106,7 @@ export async function GET(req: NextRequest) {
       hsNoah1: hs.noah1, hsNoah2: hs.noah2,
       hsAlfredo1: hs.alfredo1, hsAlfredo2: hs.alfredo2,
       hsMomodu1: hs.momodu1, hsMomodu2: hs.momodu2,
+      hsJacob1: hs.jacob1, hsJacob2: hs.jacob2,
     });
   } catch (err) {
     console.error("Report data error:", err);

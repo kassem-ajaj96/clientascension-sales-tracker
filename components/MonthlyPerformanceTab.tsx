@@ -179,6 +179,7 @@ function buildReportHTML(
   hsNoah1: any, hsNoah2: any,
   hsAlfredo1: any, hsAlfredo2: any,
   hsMomodu1: any, hsMomodu2: any,
+  hsJacob1: any, hsJacob2: any,
   generatedAt: string
 ): string {
   const pct = (v: number | null) => (v === null ? "—" : `${(v * 100).toFixed(1)}%`);
@@ -377,6 +378,7 @@ function buildReportHTML(
       ["Noah",    hsNoah1],
       ["Alfredo", hsAlfredo1],
       ["Momodu",  hsMomodu1],
+      ["Jacob",   hsJacob1],
     ];
     const zero = { scheduled: 0, showed: 0, offered: 0, closes: 0, showRate: null, offerRate: null, closeRate: null, cashCollected: 0 };
     const getData = (ds: any) => ds?.reps?.find((r: any) => r.name === closerName) ?? zero;
@@ -755,6 +757,7 @@ export function AnalysisTab({
         rd.hsNoah1, rd.hsNoah2,
         rd.hsAlfredo1, rd.hsAlfredo2,
         rd.hsMomodu1, rd.hsMomodu2,
+        rd.hsJacob1, rd.hsJacob2,
         generatedAt
       );
 

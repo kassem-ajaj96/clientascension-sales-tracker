@@ -1,6 +1,6 @@
 const BASE = "https://api.hubapi.com";
 
-const SDR_SETTERS = ["Antwon", "Erten", "Noah", "Alfredo", "Momodu"];
+const SDR_SETTERS = ["Antwon", "Erten", "Noah", "Alfredo", "Momodu", "Jacob"];
 const AE_NAMES = ["Peter", "Logan", "Andrew", "Ciaran", "Fourkan"];
 
 // AIAA Pipeline stage IDs
@@ -402,7 +402,7 @@ export async function getHubSpotAllReportData(
     buildOwnerMap(),
   ]);
 
-  const VIEWS = ["All", "Antwon", "Noah", "Alfredo", "Momodu"] as const;
+  const VIEWS = ["All", "Antwon", "Noah", "Alfredo", "Momodu", "Jacob"] as const;
   const makeAEStats = () => Object.fromEntries(AE_NAMES.map((n) => [n, emptyStats()])) as Record<string, AEStats>;
   const sm: Record<string, { m1: Record<string, AEStats>; m2: Record<string, AEStats> }> = {};
   for (const v of VIEWS) sm[v] = { m1: makeAEStats(), m2: makeAEStats() };
@@ -450,6 +450,7 @@ export async function getHubSpotAllReportData(
     noah1: buildResponse(sm["Noah"].m1),     noah2: buildResponse(sm["Noah"].m2),
     alfredo1: buildResponse(sm["Alfredo"].m1), alfredo2: buildResponse(sm["Alfredo"].m2),
     momodu1: buildResponse(sm["Momodu"].m1), momodu2: buildResponse(sm["Momodu"].m2),
+    jacob1: buildResponse(sm["Jacob"].m1), jacob2: buildResponse(sm["Jacob"].m2),
   };
 }
 
