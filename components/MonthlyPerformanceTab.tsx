@@ -388,7 +388,6 @@ function buildReportHTML(
       ["Offer Rate",     d => pct(d.offerRate)],
       ["Closed Deals",   d => String(d.closes)],
       ["Close Rate",     d => pct(d.closeRate)],
-      ["Cash Collected", d => $m(d.cashCollected)],
     ];
 
     const rows = metrics.map(([label, getValue]) => `
@@ -432,8 +431,6 @@ function buildReportHTML(
       return `<tr${tot ? ' class="tot"' : ''}>
         <td class="name">${name}</td>
         <td class="r dim grp-sep">${$m(p.cashCollected)}</td><td class="r">${$m(c.cashCollected)}</td><td class="c">${diffHtml(c.cashCollected, p.cashCollected, "money")}</td>
-        <td class="r dim grp-sep">${p.closes}</td><td class="r">${c.closes}</td><td class="c">${diffHtml(c.closes, p.closes, "num")}</td>
-        <td class="r dim grp-sep">${$mOrDash(p.cashPerCall)}</td><td class="r">${$mOrDash(c.cashPerCall)}</td><td class="c">${diffHtml(c.cashPerCall, p.cashPerCall, "money")}</td>
       </tr>`;
     });
 
@@ -444,9 +441,40 @@ function buildReportHTML(
         <thead>
           <tr>
             <th rowspan="2" style="vertical-align:bottom">Rep</th>
-            ${grpTh("Cash Collected")}${grpTh("Closes")}${grpTh("Cash / Call")}
+            ${grpTh("Cash Collected")}
           </tr>
-          <tr>${grpSubThs("r")}${grpSubThs("r")}${grpSubThs("r")}</tr>
+          <tr>${grpSubThs("r")}</tr>
+        </thead>
+        <tbody>${rows.join("")}</tbody>
+      </table>
+      ${footer(pageNum, total)}
+    `;
+  }
+
+  function closesPage(pageNum: number, total: number): string {
+    const names = ["All Team", ...(monthlyData?.current.reps.map((r) => r.name) ?? [])];
+    const zero = { closes: 0 };
+
+    const rows = names.map(name => {
+      const c = name === "All Team" ? monthlyData?.current.totals ?? zero : monthlyData?.current.reps.find((r) => r.name === name) ?? zero;
+      const p = name === "All Team" ? monthlyData?.previous.totals ?? zero : monthlyData?.previous.reps.find((r) => r.name === name) ?? zero;
+      const tot = name === "All Team";
+      return `<tr${tot ? ' class="tot"' : ''}>
+        <td class="name">${name}</td>
+        <td class="r dim grp-sep">${p.closes}</td><td class="r">${c.closes}</td><td class="c">${diffHtml(c.closes, p.closes, "num")}</td>
+      </tr>`;
+    });
+
+    return `
+      ${hdr(`${m1Label} vs ${m2Label}`)}
+      <div class="title">Closes</div>
+      <table>
+        <thead>
+          <tr>
+            <th rowspan="2" style="vertical-align:bottom">Rep</th>
+            ${grpTh("Closes")}
+          </tr>
+          <tr>${grpSubThs("r")}</tr>
         </thead>
         <tbody>${rows.join("")}</tbody>
       </table>
@@ -581,7 +609,7 @@ function buildReportHTML(
   const ACTIVE_AES = ["Peter", "Logan", "Andrew", "Ciaran"];
   const coldReps = (cold1?.reps ?? []).map((r: any) => r.name).filter((n: string) => ACTIVE_AES.includes(n));
   const sdrNames: string[] = sdr1?.reps?.map((r: any) => r.name) ?? ["Antwon", "Noah", "Alfredo", "Momodu"];
-  const total = closerNames.length + coldReps.length + ACTIVE_AES.length + sdrNames.length + 3; // closer-from-setters pages + individual setter pages + team total + cash + rev chart
+  const total = closerNames.length + coldReps.length + ACTIVE_AES.length + sdrNames.length + 4; // closer-from-setters + individual setter pages + team total + cash + closes + rev chart
 
   const baseOffset = closerNames.length + coldReps.length + ACTIVE_AES.length;
   const numberedPages: string[] = [
@@ -591,7 +619,8 @@ function buildReportHTML(
     ...sdrNames.map((name: string, i: number) => setterRepPage(name, baseOffset + i + 1, total)),
     setterPage(baseOffset + sdrNames.length + 1, total),
     cashPage(baseOffset + sdrNames.length + 2, total),
-    revChartPage(baseOffset + sdrNames.length + 3, total),
+    closesPage(baseOffset + sdrNames.length + 3, total),
+    revChartPage(baseOffset + sdrNames.length + 4, total),
   ];
 
   const pages = numberedPages.map((content, i) =>
