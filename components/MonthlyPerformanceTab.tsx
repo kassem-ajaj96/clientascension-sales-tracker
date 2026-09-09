@@ -189,20 +189,20 @@ function buildReportHTML(
   const css = `
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: #111; background: white; }
-    .page { padding: 40px 40px 64px; page-break-after: always; position: relative; min-height: 100vh; }
+    .page { padding: 28px 32px 48px; page-break-after: always; position: relative; }
     .page:last-child { page-break-after: avoid; }
-    .hdr { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #e53e1e; padding-bottom: 12px; margin-bottom: 24px; }
-    .brand { font-size: 15px; font-weight: 900; color: #e53e1e; letter-spacing: 0.08em; text-transform: uppercase; }
-    .period { font-size: 12px; font-weight: 600; color: #555; }
-    .title { font-size: 20px; font-weight: 800; color: #111; margin-bottom: 18px; }
-    .section-lbl { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid #e5e5e5; }
-    .section-lbl + table { margin-bottom: 20px; }
+    .hdr { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #e53e1e; padding-bottom: 10px; margin-bottom: 20px; }
+    .brand { font-size: 14px; font-weight: 900; color: #e53e1e; letter-spacing: 0.08em; text-transform: uppercase; }
+    .period { font-size: 11px; font-weight: 600; color: #555; }
+    .title { font-size: 18px; font-weight: 800; color: #111; margin-bottom: 14px; }
+    .section-lbl { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #e5e5e5; }
+    .section-lbl + table { margin-bottom: 16px; }
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
     thead { background: #f8f8f8; }
-    th { text-align: left; padding: 8px 10px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #555; border-bottom: 2px solid #e5e5e5; }
+    th { text-align: left; padding: 7px 10px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #555; border-bottom: 2px solid #e5e5e5; }
     th.r { text-align: right; }
     th.c { text-align: center; }
-    td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; color: #333; vertical-align: middle; }
+    td { padding: 7px 10px; border-bottom: 1px solid #f0f0f0; color: #333; vertical-align: middle; }
     td.r { text-align: right; }
     td.c { text-align: center; }
     td.name { font-weight: 700; color: #111; }
@@ -216,19 +216,19 @@ function buildReportHTML(
     .bg { background: #dcfce7; color: #16a34a; }
     .br { background: #fee2e2; color: #dc2626; }
     .bn { background: #f5f5f5; color: #888; }
-    .footer { position: absolute; bottom: 20px; left: 40px; right: 40px; display: flex; justify-content: space-between; font-size: 10px; color: #aaa; border-top: 1px solid #e5e5e5; padding-top: 8px; }
+    .footer { position: absolute; bottom: 14px; left: 32px; right: 32px; display: flex; justify-content: space-between; font-size: 10px; color: #aaa; border-top: 1px solid #e5e5e5; padding-top: 6px; }
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .page { page-break-after: always; }
       .page:last-child { page-break-after: avoid; }
     }
-    .slide-wrap { display: flex; min-height: calc(100vh - 104px); gap: 0; }
-    .slide-left { width: 32%; background: #1a3f5c; color: white; padding: 36px 28px; display: flex; flex-direction: column; border-radius: 4px; }
-    .slide-left-brand { font-size: 9px; font-weight: 900; color: #e53e1e; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 36px; }
-    .slide-left-period { font-size: 9px; color: rgba(255,255,255,0.45); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
-    .slide-left-title { font-size: 22px; font-weight: 800; line-height: 1.25; margin-bottom: 10px; }
-    .slide-left-sub { font-size: 13px; font-weight: 600; opacity: 0.7; }
-    .slide-right { flex: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center; }
+    .slide-wrap { display: flex; gap: 0; }
+    .slide-left { width: 28%; background: #1a3f5c; color: white; padding: 28px 22px; display: flex; flex-direction: column; border-radius: 4px; min-width: 160px; }
+    .slide-left-brand { font-size: 9px; font-weight: 900; color: #e53e1e; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 24px; }
+    .slide-left-period { font-size: 8px; color: rgba(255,255,255,0.45); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .slide-left-title { font-size: 18px; font-weight: 800; line-height: 1.25; margin-bottom: 8px; }
+    .slide-left-sub { font-size: 12px; font-weight: 600; opacity: 0.7; }
+    .slide-right { flex: 1; padding-left: 32px; display: flex; flex-direction: column; justify-content: center; }
     .slide-right table tr:nth-child(even) td { background: #f5f5f5; }
     .diff-pos { font-style: italic; color: #111; }
     .diff-neg { font-style: italic; font-weight: bold; color: #dc2626; }
