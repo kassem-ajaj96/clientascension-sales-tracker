@@ -234,6 +234,18 @@ function buildReportHTML(
     .slide-right table tr:nth-child(even) td { background: #f5f5f5; }
     .diff-pos { color: #16a34a; font-weight: 700; }
     .diff-neg { color: #dc2626; font-weight: 700; }
+    .cmp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; align-items: start; }
+    .cmp-block .section-lbl { margin-bottom: 4px; padding-bottom: 3px; }
+    .compact-table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+    .compact-table thead { background: #f8f8f8; }
+    .compact-table th { text-align: left; padding: 4px 7px; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #555; border-bottom: 2px solid #e5e5e5; }
+    .compact-table th.r { text-align: right; }
+    .compact-table th.c { text-align: center; }
+    .compact-table td { padding: 4px 7px; border-bottom: 1px solid #f0f0f0; color: #333; vertical-align: middle; }
+    .compact-table td.r { text-align: right; }
+    .compact-table td.c { text-align: center; }
+    .compact-table td.name { font-weight: 700; color: #111; }
+    .compact-table tr:nth-child(even) td { background: #f5f5f5; }
   `;
 
   function hdr(period: string) {
@@ -326,6 +338,63 @@ function buildReportHTML(
     `;
   }
 
+  // ── Combined closer performance page (all 4 reps) ────────────────────────
+
+  function allClosersPage(pageNum: number, total: number): string {
+    const ACTIVE = ["Peter", "Logan", "Andrew", "Ciaran"];
+    const zero = { scheduled: 0, showed: 0, offered: 0, closes: 0, cashCollected: 0, cashPerCall: null as null, showRate: null as null, offerRate: null as null, closeRate: null as null };
+
+    function section(name: string): string {
+      const c = monthlyData?.current.reps.find((r) => r.name === name) ?? zero;
+      const p = monthlyData?.previous.reps.find((r) => r.name === name) ?? zero;
+      const rows = [
+        ["Calls",          String(p.scheduled),    String(c.scheduled),    diffHtmlPdf(p.scheduled,    c.scheduled,    "num")],
+        ["Shows",          String(p.showed),        String(c.showed),        diffHtmlPdf(p.showed,        c.showed,        "num")],
+        ["Offers",         String(p.offered),       String(c.offered),       diffHtmlPdf(p.offered,       c.offered,       "num")],
+        ["Closes",         String(p.closes),        String(c.closes),        diffHtmlPdf(p.closes,        c.closes,        "num")],
+        ["Cash Collected", $m(p.cashCollected),     $m(c.cashCollected),     diffHtmlPdf(p.cashCollected, c.cashCollected, "money")],
+        ["Cash/Call",      $mOrDash(p.cashPerCall), $mOrDash(c.cashPerCall), diffHtmlPdf(p.cashPerCall,   c.cashPerCall,   "money")],
+        ["Show Rate",      pct(p.showRate),          pct(c.showRate),          diffHtmlPdf(p.showRate,      c.showRate,      "pct")],
+        ["Offer Rate",     pct(p.offerRate),         pct(c.offerRate),         diffHtmlPdf(p.offerRate,     c.offerRate,     "pct")],
+        ["Close Rate",     pct(p.closeRate),         pct(c.closeRate),         diffHtmlPdf(p.closeRate,     c.closeRate,     "pct")],
+      ];
+      return `
+        <div class="cmp-block">
+          <div class="section-lbl">${name}</div>
+          <table class="compact-table">
+            <thead><tr>
+              <th>KPI</th><th class="r">${m2Label}</th><th class="r">${m1Label}</th><th class="c">±</th>
+            </tr></thead>
+            <tbody>
+              ${rows.map(([lbl, pv, cv, d]) => `<tr>
+                <td class="name">${lbl}</td>
+                <td class="r"><strong>${pv}</strong></td>
+                <td class="r"><strong>${cv}</strong></td>
+                <td class="c">${d}</td>
+              </tr>`).join("")}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    return `
+      <div class="slide-wrap">
+        <div class="slide-left">
+          <div class="slide-left-brand">Client Ascension</div>
+          <div class="slide-left-period">${m2Label} vs ${m1Label}</div>
+          <div class="slide-left-title">Closer Performance</div>
+          <div class="slide-left-sub">Individual Reps</div>
+        </div>
+        <div class="slide-right">
+          <div class="cmp-grid">
+            ${ACTIVE.map(section).join("")}
+          </div>
+        </div>
+      </div>
+      ${footer(pageNum, total)}
+    `;
+  }
+
   // ── Grouped-header comparison table helper ───────────────────────────────
 
   function grpTh(label: string) {
@@ -366,6 +435,59 @@ function buildReportHTML(
           `).join("")}
         </tbody>
       </table>
+      ${footer(pageNum, total)}
+    `;
+  }
+
+  // ── Combined cold traffic page (all 4 reps) ──────────────────────────────
+
+  function coldAllPage(pageNum: number, total: number): string {
+    const ACTIVE = ["Peter", "Logan", "Andrew", "Ciaran"];
+
+    function section(name: string): string {
+      const getR = (ds: any) => ds?.reps?.find((r: any) => r.name === name) ?? { calls: 0, liveCalls: 0, closes: 0, showRate: null, closeRate: null };
+      const c = getR(cold1);
+      const p = getR(cold2);
+      const rows = [
+        ["Calls",      String(p.calls),     String(c.calls),     diffHtml(p.calls,     c.calls,     "num")],
+        ["Live Calls", String(p.liveCalls), String(c.liveCalls), diffHtml(p.liveCalls, c.liveCalls, "num")],
+        ["Closes",     String(p.closes),    String(c.closes),    diffHtml(p.closes,    c.closes,    "num")],
+        ["Show Rate",  pct(p.showRate),     pct(c.showRate),     diffHtml(p.showRate,  c.showRate,  "pct")],
+        ["Close Rate", pct(p.closeRate),    pct(c.closeRate),    diffHtml(p.closeRate, c.closeRate, "pct")],
+      ];
+      return `
+        <div class="cmp-block">
+          <div class="section-lbl">${name}</div>
+          <table class="compact-table">
+            <thead><tr>
+              <th>Metric</th><th class="r">${m2Label}</th><th class="r">${m1Label}</th><th class="c">±</th>
+            </tr></thead>
+            <tbody>
+              ${rows.map(([lbl, pv, cv, d]) => `<tr>
+                <td class="name">${lbl}</td>
+                <td class="r"><strong>${pv}</strong></td>
+                <td class="r"><strong>${cv}</strong></td>
+                <td class="c">${d}</td>
+              </tr>`).join("")}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    return `
+      <div class="slide-wrap">
+        <div class="slide-left">
+          <div class="slide-left-brand">Client Ascension</div>
+          <div class="slide-left-period">${m2Label} vs ${m1Label}</div>
+          <div class="slide-left-title">Cold Traffic Performance</div>
+          <div class="slide-left-sub">Individual Reps</div>
+        </div>
+        <div class="slide-right">
+          <div class="cmp-grid">
+            ${ACTIVE.map(section).join("")}
+          </div>
+        </div>
+      </div>
       ${footer(pageNum, total)}
     `;
   }
@@ -415,6 +537,66 @@ function buildReportHTML(
             </tr></thead>
             <tbody>${rows}</tbody>
           </table>
+        </div>
+      </div>
+      ${footer(pageNum, total)}
+    `;
+  }
+
+  // ── Combined closer-from-setters page (all 4 closers) ────────────────────
+
+  function allClosersFromSettersPage(pageNum: number, total: number): string {
+    const ACTIVE = ["Peter", "Logan", "Andrew", "Ciaran"];
+    const setterCols: [string, any][] = [
+      ["Antwon",  hsAntwon1],
+      ["Noah",    hsNoah1],
+      ["Alfredo", hsAlfredo1],
+      ["Momodu",  hsMomodu1],
+      ["Jacob",   hsJacob1],
+    ];
+    const zero = { scheduled: 0, showed: 0, offered: 0, closes: 0, showRate: null, offerRate: null, closeRate: null };
+    const getData = (ds: any, closerName: string) => ds?.reps?.find((r: any) => r.name === closerName) ?? zero;
+
+    const metrics: [string, (d: any) => string][] = [
+      ["No. of Calls", d => String(d.scheduled)],
+      ["Live Calls",   d => String(d.showed)],
+      ["Show Rate",    d => pct(d.showRate)],
+      ["Offer Rate",   d => pct(d.offerRate)],
+      ["Closed Deals", d => String(d.closes)],
+      ["Close Rate",   d => pct(d.closeRate)],
+    ];
+
+    function section(closerName: string): string {
+      const cols = setterCols.map(([name, ds]) => ({ name, d: getData(ds, closerName) }));
+      const rows = metrics.map(([label, getValue]) => `
+        <tr>
+          <td class="name">${label}</td>
+          ${cols.map(({ d }) => `<td class="c"><strong>${getValue(d)}</strong></td>`).join("")}
+        </tr>
+      `).join("");
+      return `
+        <div class="cmp-block" style="margin-bottom:14px">
+          <div class="section-lbl">${closerName}</div>
+          <table class="compact-table">
+            <thead><tr>
+              <th>KPI</th>
+              ${cols.map(({ name }) => `<th class="c">${name}</th>`).join("")}
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
+
+    return `
+      <div class="slide-wrap">
+        <div class="slide-left">
+          <div class="slide-left-brand">Client Ascension</div>
+          <div class="slide-left-period">${m2Label}</div>
+          <div class="slide-left-title">Performance from Setters</div>
+          <div class="slide-left-sub">Individual Reps</div>
+        </div>
+        <div class="slide-right" style="justify-content:flex-start;padding-top:12px">
+          ${ACTIVE.map(section).join("")}
         </div>
       </div>
       ${footer(pageNum, total)}
@@ -607,23 +789,77 @@ function buildReportHTML(
     `;
   }
 
+  // ── Combined setter performance page (all individual setters) ────────────
+
+  function allSettersPage(pageNum: number, total: number): string {
+    const names: string[] = sdr1?.reps?.map((r: any) => r.name) ?? ["Antwon", "Noah", "Alfredo", "Momodu"];
+    const zero = { dials: 0, connects: 0, convo: 0, meetingsBooked: 0, connectionRate: null as null, connectToConvo: null as null, convoToBooking: null as null, dialToBooking: null as null };
+
+    function section(name: string): string {
+      const c = sdr1?.reps?.find((r: any) => r.name === name) ?? zero;
+      const p = sdr2?.reps?.find((r: any) => r.name === name) ?? zero;
+      const rows = [
+        ["Dials",           String(p.dials),          String(c.dials),          diffHtmlPdf(p.dials,          c.dials,          "num")],
+        ["Connects",        String(p.connects),       String(c.connects),       diffHtmlPdf(p.connects,       c.connects,       "num")],
+        ["Conversations",   String(p.convo),           String(c.convo),          diffHtmlPdf(p.convo,          c.convo,          "num")],
+        ["Meetings Booked", String(p.meetingsBooked), String(c.meetingsBooked), diffHtmlPdf(p.meetingsBooked, c.meetingsBooked, "num")],
+        ["Connection Rate", pct(p.connectionRate),    pct(c.connectionRate),    diffHtmlPdf(p.connectionRate, c.connectionRate, "pct")],
+        ["Connect→Convo",   pct(p.connectToConvo),    pct(c.connectToConvo),    diffHtmlPdf(p.connectToConvo, c.connectToConvo, "pct")],
+        ["Convo→Booking",   pct(p.convoToBooking),    pct(c.convoToBooking),    diffHtmlPdf(p.convoToBooking, c.convoToBooking, "pct")],
+        ["Dial→Booking",    pct(p.dialToBooking),     pct(c.dialToBooking),     diffHtmlPdf(p.dialToBooking,  c.dialToBooking,  "pct")],
+      ];
+      return `
+        <div class="cmp-block">
+          <div class="section-lbl">${name}</div>
+          <table class="compact-table">
+            <thead><tr>
+              <th>Metric</th><th class="r">${m2Label}</th><th class="r">${m1Label}</th><th class="c">±</th>
+            </tr></thead>
+            <tbody>
+              ${rows.map(([lbl, pv, cv, d]) => `<tr>
+                <td class="name">${lbl}</td>
+                <td class="r"><strong>${pv}</strong></td>
+                <td class="r"><strong>${cv}</strong></td>
+                <td class="c">${d}</td>
+              </tr>`).join("")}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    return `
+      <div class="slide-wrap">
+        <div class="slide-left">
+          <div class="slide-left-brand">Client Ascension</div>
+          <div class="slide-left-period">${m2Label} vs ${m1Label}</div>
+          <div class="slide-left-title">Setter Performance</div>
+          <div class="slide-left-sub">Individual Setters</div>
+        </div>
+        <div class="slide-right">
+          <div class="cmp-grid">
+            ${names.map(section).join("")}
+          </div>
+        </div>
+      </div>
+      ${footer(pageNum, total)}
+    `;
+  }
+
   // ── Assemble pages ────────────────────────────────────────────────────────
 
-  const ACTIVE_AES = ["Peter", "Logan", "Andrew", "Ciaran"];
-  const coldReps = (cold1?.reps ?? []).map((r: any) => r.name).filter((n: string) => ACTIVE_AES.includes(n));
-  const sdrNames: string[] = sdr1?.reps?.map((r: any) => r.name) ?? ["Antwon", "Noah", "Alfredo", "Momodu"];
-  const total = closerNames.length + coldReps.length + ACTIVE_AES.length + sdrNames.length + 4; // closer-from-setters + individual setter pages + team total + cash + closes + rev chart
-
-  const baseOffset = closerNames.length + coldReps.length + ACTIVE_AES.length;
+  // 9 pages total: All Team, combined closers, combined cold, combined from-setters,
+  // combined setters, team total setter, cash, closes, rev chart
+  const total = 9;
   const numberedPages: string[] = [
-    ...closerNames.map((name, i) => closerPage(name, i + 1, total)),
-    ...coldReps.map((name: string, i: number) => coldRepPage(name, closerNames.length + i + 1, total)),
-    ...ACTIVE_AES.map((name, i) => closerFromSettersPage(name, closerNames.length + coldReps.length + i + 1, total)),
-    ...sdrNames.map((name: string, i: number) => setterRepPage(name, baseOffset + i + 1, total)),
-    setterPage(baseOffset + sdrNames.length + 1, total),
-    cashPage(baseOffset + sdrNames.length + 2, total),
-    closesPage(baseOffset + sdrNames.length + 3, total),
-    revChartPage(baseOffset + sdrNames.length + 4, total),
+    closerPage("All Team", 1, total),
+    allClosersPage(2, total),
+    coldAllPage(3, total),
+    allClosersFromSettersPage(4, total),
+    allSettersPage(5, total),
+    setterPage(6, total),
+    cashPage(7, total),
+    closesPage(8, total),
+    revChartPage(9, total),
   ];
 
   const pages = numberedPages.map((content, i) =>
