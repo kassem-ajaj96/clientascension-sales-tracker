@@ -203,7 +203,7 @@ function isColdTrafficSource(source: string): boolean {
 }
 
 // Owner IDs for the 5 AEs — used to narrow the cold traffic search server-side
-const AE_OWNER_IDS = ["191709153", "83317424", "83529533", "90936901", "90936902", "99109784"];
+const AE_OWNER_IDS = ["191709153", "83317424", "83529533", "90936901", "90936902"];
 
 async function searchColdTrafficDeals(): Promise<{ id: string; properties: DealProps }[]> {
   const deals: { id: string; properties: DealProps }[] = [];
