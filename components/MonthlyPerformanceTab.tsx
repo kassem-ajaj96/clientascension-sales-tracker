@@ -25,7 +25,7 @@ interface MonthlyData {
   previous: MonthSnapshot;
 }
 
-const AES = ["All Team", "Peter", "Logan", "Andrew", "Ciaran"] as const;
+const AES = ["All Team", "Peter", "Logan", "Andrew", "Ciaran", "Nathan"] as const;
 type AEName = (typeof AES)[number];
 
 function currentYearMonth(): string {
@@ -341,7 +341,7 @@ function buildReportHTML(
   // ── Combined closer performance page (all 4 reps) ────────────────────────
 
   function allClosersPage(pageNum: number, total: number): string {
-    const ACTIVE = ["Peter", "Logan", "Andrew", "Ciaran"];
+    const ACTIVE = ["Peter", "Logan", "Andrew", "Ciaran", "Nathan"];
     const zero = { scheduled: 0, showed: 0, offered: 0, closes: 0, cashCollected: 0, cashPerCall: null as null, showRate: null as null, offerRate: null as null, closeRate: null as null };
 
     function section(name: string): string {
@@ -442,7 +442,7 @@ function buildReportHTML(
   // ── Combined cold traffic page (all 4 reps) ──────────────────────────────
 
   function coldAllPage(pageNum: number, total: number): string {
-    const ACTIVE = ["Peter", "Logan", "Andrew", "Ciaran"];
+    const ACTIVE = ["Peter", "Logan", "Andrew", "Ciaran", "Nathan"];
 
     function section(name: string): string {
       const getR = (ds: any) => ds?.reps?.find((r: any) => r.name === name) ?? { calls: 0, liveCalls: 0, closes: 0, showRate: null, closeRate: null };
@@ -546,7 +546,7 @@ function buildReportHTML(
   // ── Combined closer-from-setters page (all 4 closers) ────────────────────
 
   function allClosersFromSettersPage(pageNum: number, total: number): string {
-    const ACTIVE = ["Peter", "Logan", "Andrew", "Ciaran"];
+    const ACTIVE = ["Peter", "Logan", "Andrew", "Ciaran", "Nathan"];
     const setterCols: [string, any][] = [
       ["Antwon",  hsAntwon1],
       ["Noah",    hsNoah1],
